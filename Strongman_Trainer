@@ -35,7 +35,7 @@ local Library = loadstring(game:HttpGetAsync('https://pastebin.com/raw/edJT9EGX'
 local Window = Library:CreateWindow("Trainer by Ezpi#0474")
 
 --// Exploit Check \\--
-if fireproximitypromp and firetouchinterest then
+if fireproximityprompt and firetouchinterest then
     local Toggle_1 = Window:AddToggle({
         text = 'Auto Pull',
         flag = 'Enabled',

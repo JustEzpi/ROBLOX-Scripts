@@ -1,0 +1,30 @@
+--// Service \\--
+local Players = game:GetService("Players")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local FireClick = fireclickdetector or false
+
+--// Exploit Check \\--
+if not FireClick then
+    while true do end
+end
+
+--// Get Path & AutoClick \\--
+local Connection;
+Connection = Mouse.Button1Down:Connect(function()
+
+    local Path = Mouse.Target
+    if Path then
+        local ClickDetector = Path:FindFirstChildOfClass("ClickDetector", true) or Path.Parent:FindFirstChildOfClass("ClickDetector") or Path:FindFirstAncestorOfClass("ClickDetector")
+        if ClickDetector and Connection ~= nil then
+            Connection:Disconnect()
+
+            while true do
+                FireClick(ClickDetector, 0)
+                wait(PressDelay)
+            end
+        end
+    end
+end)

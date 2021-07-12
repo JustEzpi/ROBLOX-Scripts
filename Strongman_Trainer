@@ -15,7 +15,7 @@ local Areas = Workspace:WaitForChild("Areas")
 function GetGoal()
     for _, A_1 in next, Areas:GetChildren() do
         local Goal = A_1:FindFirstChild("Goal", true)
-        if Goal and Goal:FindFirstChildOfClass("TouchTransmitter") then
+        if Goal and Goal:FindFirstChildWhichIsA("TouchTransmitter") then
             return Goal
         end
     end
@@ -28,6 +28,15 @@ if not pcall(function() return syn.protect_gui end) then
     syn.protect_gui = function(A_1)
         A_1.Parent = game:GetService("CoreGui")
     end
+end
+
+--// Send Notification \\--
+function Notification(A_1, A_2)
+    StarterGui:SetCore("SendNotification", {
+        Title = A_1,
+        Text = A_2,
+        Duration = 6
+    })
 end
 
 --// UI Library \\--
@@ -63,14 +72,7 @@ if fireproximityprompt and firetouchinterest then
             
             -- Check Closest
             if Closest == false then
-                StarterGui:SetCore(
-                    "SendNotification",
-                    {
-                        Title = "Ezpi's Trainer",
-                        Text = "No draggable found. :(",
-                        Duration = 10
-                    }
-                )
+                Notification("Ezpi's Trainer", "No draggable found. :(")
             end
 
             -- Loop
@@ -92,7 +94,7 @@ if fireproximityprompt and firetouchinterest then
             end
 
             -- Make sure to finish it
-            wait(0.2)
+            wait(0.3)
             if Goal then
                 for _, A_1 in next, Draggables:GetChildren() do
                     firetouchinterest(Goal, A_1, 0)
@@ -101,6 +103,53 @@ if fireproximityprompt and firetouchinterest then
             end
         end
     })
+    if Best ~= false then
+        Window:AddButton({
+            text = "Best Draggable",
+            callback = function()
+                --// Load Best Area \\--
+                local Highest = false
+                local HighestArea = "Area" .. #Areas:GetChildren()
+                for _, A_1 in next, Areas:GetChildren() do
+                    if string.find(A_1.Name, HighestArea) then
+                        Highest = A_1
+                    end
+                end
+                if Highest ~= false and #Highest.DraggableItems:GetChildren() > 4 then
+                    local Model = Highest:FindFirstChildWhichIsA("Model")
+                    if Model then
+                        local ModelCFrame = Model:GetModelCFrame()
+                        repeat
+                            pcall(function()
+                                Player.Character.HumanoidRootPart.CFrame = ModelCFrame
+                            end)
+                            wait()
+                        until #Highest.DraggableItems:GetChildren() >= 3
+                    end
+                end
+
+                --// Get Best Draggable \\--
+                if Highest ~= false then
+                    local Highest = 0
+                    local Best = false
+                    for _, A_1 in next, Areas:GetDescendants() do
+                        if A_1:IsA("ProximityPrompt") and A_1:FindFirstAncestor("DraggableItems") then
+                            local Worth = A_1.Parent.Parent:FindFirstChild("Coins")
+                            if Worth and Worth.Value > Highest then
+                                Highest = Worth.Value
+                                Best = A_1.Parent.CFrame
+                            end
+                        end
+                    end
+                    if Best ~= false then
+                        Player.Character.HumanoidRootPart.CFrame = Best + Vector3.new(0, Player.Character.HumanoidRootPart.Size.Y, 0)
+                    end
+                else
+                    Notification("Ezpi's Trainer", "Area not found. :(")
+                end
+            end
+        })
+    end
 else
     Window:AddLabel({
         text = "Buy Synapse X"

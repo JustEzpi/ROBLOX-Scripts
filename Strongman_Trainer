@@ -74,6 +74,7 @@ if fireproximityprompt and firetouchinterest then
             if Closest == false then
                 Notification("Ezpi's Trainer", "No draggable found. :(")
             end
+            wait(0.5)
 
             -- Loop
             local OldCFrame = Player.Character.HumanoidRootPart.CFrame
@@ -112,10 +113,11 @@ if fireproximityprompt and firetouchinterest then
                 local HighestArea = "Area" .. #Areas:GetChildren()
                 for _, A_1 in next, Areas:GetChildren() do
                     if string.find(A_1.Name, HighestArea) then
+                        print(A_1.Name, HighestArea)
                         Highest = A_1
                     end
                 end
-                if Highest ~= false and #Highest.DraggableItems:GetChildren() > 4 then
+                if Highest ~= false and #Highest.DraggableItems:GetChildren() <= 2 then
                     local Model = Highest:FindFirstChildWhichIsA("Model")
                     if Model then
                         local ModelCFrame = Model:GetModelCFrame()
@@ -124,19 +126,19 @@ if fireproximityprompt and firetouchinterest then
                                 Player.Character.HumanoidRootPart.CFrame = ModelCFrame
                             end)
                             wait()
-                        until #Highest.DraggableItems:GetChildren() >= 3
+                        until #Highest.DraggableItems:GetChildren() >= 4
                     end
                 end
 
                 --// Get Best Draggable \\--
                 if Highest ~= false then
-                    local Highest = 0
+                    local HighestValue = 0
                     local Best = false
-                    for _, A_1 in next, Areas:GetDescendants() do
+                    for _, A_1 in next, Highest.DraggableItems:GetDescendants() do
                         if A_1:IsA("ProximityPrompt") and A_1:FindFirstAncestor("DraggableItems") then
                             local Worth = A_1.Parent.Parent:FindFirstChild("Coins")
-                            if Worth and Worth.Value > Highest then
-                                Highest = Worth.Value
+                            if Worth and Worth.Value > HighestValue then
+                                HighestValue = Worth.Value
                                 Best = A_1.Parent.CFrame
                             end
                         end

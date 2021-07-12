@@ -49,9 +49,6 @@ if fireproximityprompt and firetouchinterest then
         text = 'Auto Pull',
         flag = 'Enabled',
         callback = function()
-            -- Anchor
-            Player.Character.HumanoidRootPart.Anchored = Library.flags.Enabled
-
             -- Check
             if not Library.flags.Enabled then
                 return
@@ -74,26 +71,33 @@ if fireproximityprompt and firetouchinterest then
             if Closest == false then
                 Notification("Ezpi's Trainer", "No draggable found. :(")
             end
-            wait(0.5)
+
+            -- Stay Put
+            local CloseCFrame = Closest.Parent.CFrame
+            Player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            Player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+
+            -- NoClip
+            local NoClip = RunService.RenderStepped:Connect(function()
+                Player.Character.Humanoid:ChangeState(11)
+                Player.Character.HumanoidRootPart.CFrame = CloseCFrame
+            end)
 
             -- Loop
-            local OldCFrame = Player.Character.HumanoidRootPart.CFrame
-            while Closest and Goal and Library.flags.Enabled do
-                -- Use Closest Draggable
-                fireproximityprompt(Closest, 1)
-                wait(0.1)
+            while Closest and Goal and Library.flags.Enabled and wait() do
+                -- Variable
+                local T_1 = Draggables:GetChildren()
 
-                -- Pull to end
-                if Goal then
-                    for _, A_1 in next, Draggables:GetChildren() do
-                        firetouchinterest(Goal, A_1, 0)
-                        firetouchinterest(Goal, A_1, 1)
-                        wait()
-                    end
+                -- Use Closest Draggable
+                if #T_1 <= 3 then
+                    fireproximityprompt(Closest, 1)
                 end
 
-                -- Stay put
-                Player.Character.HumanoidRootPart.CFrame = OldCFrame
+                -- Pull to end
+                for _, A_1 in next, T_1 do
+                    firetouchinterest(Goal, A_1, 0)
+                    firetouchinterest(Goal, A_1, 1)
+                end
             end
 
             -- Make sure to finish it
@@ -104,6 +108,7 @@ if fireproximityprompt and firetouchinterest then
                     firetouchinterest(Goal, A_1, 1)
                 end
             end
+            NoClip:Disconnect()
         end
     })
     if Best ~= false then
@@ -163,6 +168,14 @@ else
     })
 end
 Library:Init()
+
+--// Draggable Fix \\--
+Draggables.ChildAdded:Connect(function(A_1)
+    if Library.flags.Enabled then
+        A_1.CanCollide = false
+        A_1.Anchored = true
+    end
+end)
 
 --// Auto-Workout \\--
 while wait(0.2) do

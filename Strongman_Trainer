@@ -78,15 +78,17 @@ if fireproximityprompt and firetouchinterest then
 
             -- Loop
             local OldCFrame = Player.Character.HumanoidRootPart.CFrame
-            while Closest and Goal and Library.flags.Enabled and wait() do
+            while Closest and Goal and Library.flags.Enabled do
                 -- Use Closest Draggable
                 fireproximityprompt(Closest, 1)
+                wait(0.1)
 
                 -- Pull to end
                 if Goal then
                     for _, A_1 in next, Draggables:GetChildren() do
                         firetouchinterest(Goal, A_1, 0)
                         firetouchinterest(Goal, A_1, 1)
+                        wait()
                     end
                 end
 

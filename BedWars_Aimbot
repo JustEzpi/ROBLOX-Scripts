@@ -1,0 +1,101 @@
+--// Credits \\--
+--[[ egg salad - __namecall hook ]]--
+--[[ Ezpi#0474 - Creator of this script ]]--
+--[[ CW Crew - Emotional support ]]--
+
+--// Settings \\--
+FOV = 250
+
+--// Service \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+--// Variables \\--
+local Camera = Workspace.CurrentCamera
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local Net = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged")
+
+--// Prevent Normal Shooting \\--
+local old;
+old = hookfunction(getrawmetatable(game).__namecall,function(...)
+    local args = {...}
+    if getnamecallmethod() == "InvokeServer" and not checkcaller() and (args[1].Name == "ProjectileHit" or args[1].Name == "ProjectileFire") and tostring(args[2]) ~= "telepearl" then
+        return
+    end
+    return old(...)
+end)
+
+--// Get Closest Enemy \\--
+function GetClosestPlayer()
+    local Closest = false
+    local Distance = FOV
+    local MousePos = Vector2.new(Mouse.X, Mouse.Y)
+    for _, A_1 in next, Players:GetPlayers() do
+        if A_1.Team ~= Player.Team and A_1.Character and A_1.Character.PrimaryPart and A_1.Character:FindFirstChild("Humanoid") and A_1.Character.Humanoid.Health > 0 then
+            local vector, onScreen = Camera:WorldToScreenPoint(A_1.Character.PrimaryPart.Position)
+            if onScreen then
+                local NewDistance = (MousePos - Vector2.new(vector.X, vector.Y)).Magnitude
+                if NewDistance < Distance then
+                    Distance = NewDistance
+                    Closest = A_1.Character.PrimaryPart
+                end
+            end
+        end
+    end
+    warn(Distance)
+    return Closest
+end
+
+--// Mouse Connector \\--
+local Debounce = false
+Mouse.Button1Down:Connect(function()
+    --// Debounce Check \\--
+    if Debounce then
+        return
+    else
+        Debounce = true
+    end
+
+    --// Get Closest Enemy \\--
+    local Target = GetClosestPlayer()
+    if not Target then
+        Debounce = false
+        return
+    end
+
+    --// Get Correct Inventory \\--
+    local Inventory = false
+    for _, A_1 in next, ReplicatedStorage:WaitForChild("Inventories"):GetChildren() do
+        if A_1.Name == Player.Name and (A_1:FindFirstChild("wood_bow") or A_1:FindFirstChild("wood_crossbow")) then
+            Inventory = A_1
+            break
+        end
+    end
+    if not Inventory then
+        Debounce = false
+        return
+    end
+
+    --// Type \\--
+    local Bow = Inventory:FindFirstChild("wood_bow") or Inventory:FindFirstChild("wood_crossbow")
+
+    --// Shoot Attempt \\--
+    local Arrow = Net:WaitForChild("ProjectileFire"):InvokeServer(Bow)
+
+    --// Hit Attempt \\--
+    if typeof(Arrow) == "Instance" then
+        --local CFrame = Player.Character
+        local Content = {
+            part = Target,
+            velocity = Vector3.new(),
+            hitCFrame = Target.CFrame + Vector3.new(0, 1, 0),
+            velocityMultiplier = 1
+        }
+        Net:WaitForChild("ProjectileHit"):InvokeServer(Bow.Name == "wood_bow" and "arrow" or "crossbow_arrow", Arrow, Content)
+    end
+
+    -- Debounce
+    Debounce = false
+end)

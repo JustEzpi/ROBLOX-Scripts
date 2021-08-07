@@ -1,3 +1,7 @@
+--// Credits \\--
+--[[ egg salad - __namecall hook ]]--
+--[[ Ezpi#0474 - Creator of this script ]]--
+
 --// Services \\--
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -31,6 +35,20 @@ else
     Question_Raw = Closest:FindFirstChild("Q", true)
 end
 
+--// __namecall hook \\--
+if _G.Hooked ~= true then
+    _G.Hooked = true
+    local Old;
+    Old = hookfunction(getrawmetatable(game).__namecall, function(...)
+        local Method = getnamecallmethod()
+        local Args = {...}
+        if Method == "FireServer" and tostring(Args[1]) == "CursorUpdate" then
+            Args[2] = true
+        end
+        return Old(unpack(Args))
+    end)
+end
+
 --// AutoFarm \\--
 while Player:DistanceFromCharacter(Right.Position) <= 10 and wait() do
     --// Get Correct Answer \\--
@@ -46,6 +64,7 @@ while Player:DistanceFromCharacter(Right.Position) <= 10 and wait() do
     else
         fireclickdetector(Wrong:FindFirstChildOfClass("ClickDetector"))
     end
+
     --// Wait for next Question --
     Question_Raw.Changed:wait()
     repeat

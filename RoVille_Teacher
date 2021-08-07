@@ -1,0 +1,54 @@
+--// Services \\--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+--// Variable \\--
+local Player = Players.LocalPlayer
+
+--// Get Teacher Workstation \\--
+local Closest = nil
+local Right = nil
+local Wrong = nil
+local Question_Raw = nil
+local Distance = 50
+for _, A_1 in next, Workspace:GetChildren() do
+    local R = A_1:FindFirstChild("R")
+    if R and A_1:FindFirstChild("Q", true) then
+        local Player_Distance = Player:DistanceFromCharacter(R.Position)
+        if Player_Distance < Distance then
+            Closest = A_1
+            Distance = Player_Distance
+        end
+    end
+end
+
+--// Check Workstation \\--
+if Closest == nil then
+    return warn(":(")
+else
+    Right = Closest:WaitForChild("R")
+    Wrong = Closest:WaitForChild("W")
+    Question_Raw = Closest:FindFirstChild("Q", true)
+end
+
+--// AutoFarm \\--
+while Player:DistanceFromCharacter(Right.Position) <= 10 and wait() do
+    --// Get Correct Answer \\--
+    local Question_Split = Question_Raw.Text:split(" = ")
+    local Question_Answer = Question_Split[2]
+    local Question_CorrectAnswer = loadstring(
+        "return " .. Question_Split[1]
+    )()
+
+    --// Compare & Solve \\--
+    if Question_Answer == tostring(Question_CorrectAnswer) then
+        fireclickdetector(Right:FindFirstChildOfClass("ClickDetector"))
+    else
+        fireclickdetector(Wrong:FindFirstChildOfClass("ClickDetector"))
+    end
+    --// Wait for next Question --
+    Question_Raw.Changed:wait()
+    repeat
+        wait()
+    until #Question_Raw.Text > 1
+end

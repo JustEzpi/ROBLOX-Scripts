@@ -1,0 +1,54 @@
+--// Credits \\--
+--[[ egg salad - hookfunction(s) ]]--
+--[[ Ezpi#0474 - Creator of this script ]]--
+
+--// Service \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Selected = "Ezpi:)"
+
+--// Exploit Check \\--
+if #{getrawmetatable, hookfunction, getnamecallmethod} ~= 3 then
+    while true do
+    end
+end
+
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://pastebin.com/raw/edJT9EGX'))()
+local Window = Library:CreateWindow("Blocker by Ezpi#0474")
+local Toggle_1 = Window:AddToggle({
+    text = 'Block Opponents Song',
+    flag = 'Blocking'
+})
+Library:Init()
+
+--// IsLoaded \\--
+local OLD_1;
+OLD_1 = hookfunction(getrawmetatable(game).__index, function(A_1, A_2)
+    if A_2 == "IsLoaded" and Library.flags.Blocking and tostring(A_1) ~= Selected then
+        return false
+    end
+    return OLD_1(A_1, A_2)
+end)
+
+--// Preload & InvokeServer \\--
+local OLD_2;
+OLD_2 = hookfunction(getrawmetatable(game).__namecall, function(...)
+    local Method = getnamecallmethod()
+    local Args = {...}
+    if Method == "PreloadAsync" and Library.flags.Blocking and tostring(Args[2][1]) ~= Selected then
+        return wait(30)
+    elseif Method == "InvokeServer" and type(Args[2]) == "table" and Args[2][2] == "SelectSong" then
+        Selected = Args[3][1]
+    end
+    return OLD_2(...)
+end)

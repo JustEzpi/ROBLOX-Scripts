@@ -1,0 +1,114 @@
+--// Exploit Check \\--
+if #{fireclickdetector, mousemoveabs, getspecialinfo} ~= 3 then
+    while true do
+    end
+end
+
+--// Services \\--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Numbers = ReplicatedStorage:WaitForChild("num")
+local Camera = Workspace.CurrentCamera
+
+--// Get Office Desk \\--
+local Closest = nil
+local Distance = 10
+for _, A_1 in next, Workspace:WaitForChild("OfficeArea"):GetChildren() do
+    local R = A_1:FindFirstChild("Right", true)
+    if R then
+        local Player_Distance = Player:DistanceFromCharacter(R.Parent.Position)
+        if Player_Distance < Distance then
+            Closest = A_1.Model
+            Distance = Player_Distance
+        end
+    end
+end
+
+--// Desk Check \\--
+if Closest == nil then
+    return warn("Not found :(")
+end
+
+--// Get Numbers \\--
+local UnionNumbers = {}
+for _, A_1 in next, Numbers:GetChildren() do
+    UnionNumbers[getspecialinfo(A_1).AssetId] = A_1.Name
+end
+
+--// Get Equation Answer \\--
+function GetAnswer()
+    for _, A_1 in next, Workspace:GetChildren() do
+        local SurfaceGui = A_1:FindFirstChildOfClass("SurfaceGui")
+        if SurfaceGui and SurfaceGui.Adornee == Closest.Part then
+            local TextLabel = SurfaceGui:FindFirstChildOfClass("TextLabel")
+            if TextLabel then 
+                return loadstring("return " .. SurfaceGui:FindFirstChildOfClass("TextLabel").Text)()
+            end
+        end
+    end
+    return false
+end
+
+--// Get Button Answers \\--
+function GetButton()
+    -- Get Answer
+    local EquationAnswer = tostring(GetAnswer())
+    local Answer = false
+    for _, A_1 in next, Closest.Ans:GetChildren() do
+        -- Get Numbers
+        local Number_1 = nil
+        local Number_2 = nil
+        for _, A_2 in next, A_1:GetChildren() do
+            if A_2:IsA("UnionOperation") then
+                if Number_1 == nil then
+                    Number_1 = A_2
+                    Answer = UnionNumbers[getspecialinfo(Number_1).AssetId]
+                else
+                    Number_2 = A_2
+                    Answer ..= UnionNumbers[getspecialinfo(Number_2).AssetId]
+                end
+            end
+        end
+        -- Get Proper Number
+        if Number_2 ~= nil then
+            if Number_1.Orientation.Y == -90 then
+                if Number_1.Position.X > Number_2.Position.X then
+                    Answer = Answer:reverse()
+                end
+            else
+                if Number_1.Position.X < Number_2.Position.X then
+                    Answer = Answer:reverse()
+                end
+            end
+        end
+        -- Check if correct
+        if Answer == EquationAnswer then
+            return A_1
+        end
+    end
+    return Answer
+end
+
+--// Click Function \\--
+function Click(Part)
+    -- Get Position
+    local ScreenPoint = Camera:WorldToScreenPoint(Part.Position)
+    -- Click
+    mousemoveabs(ScreenPoint.X, ScreenPoint.Y + math.random(10, 50))
+    fireclickdetector(Part:FindFirstChildOfClass("ClickDetector"), 0)
+end
+
+--// Give the Player some time \\--
+wait(2.5)
+
+--// AutoFarm \\--
+while Player:DistanceFromCharacter(Closest.Part.Position) <= 10 and wait() do
+    local Valid = GetButton()
+    if typeof(Valid) == "Instance" then
+        Click(Valid)
+    end
+end

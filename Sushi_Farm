@@ -1,0 +1,253 @@
+--// Credits \\--
+--[[ egg salad - Original Script ]]--
+--[[ Ezpi#0474 - Updating & Unpatching ]]--
+
+--// Exploit Check \\--
+if #{firesignal, fireproximityprompt} ~= 2 then
+    while true do
+    end
+end
+
+--// Non-Synapse Users \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// Globals \\--
+IgnorePlayers = false
+
+--// Services \\--
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+--// Player Variables \\--
+local Player = Players.LocalPlayer
+local Energy = Player:WaitForChild("attributes"):WaitForChild("Energy")
+local Character = Player.Character or Player.CharacterAdded:wait()
+
+--// Character Variables \\--
+local PrimaryPart = Character:WaitForChild("HumanoidRootPart")
+local Making = Character:WaitForChild("Making")
+local Washing = Character:WaitForChild("Washing")
+Player.CharacterAdded:Connect(function(Char)
+    Making = Char:WaitForChild("Making")
+    Washing = Char:WaitForChild("Washing")
+    PrimaryPart = Char:WaitForChild("PrimaryPart")
+end)
+
+-- Variables
+local sushis = require(ReplicatedStorage:WaitForChild("Sushiss"))
+local gam = Workspace:WaitForChild("Game")
+local stock = ReplicatedStorage:WaitForChild("Settings"):WaitForChild("Stock")
+local shop = {
+    Vegetable = "Vege",
+    PremFish = "Prem",
+    SoyaSauce = "Soya",
+    Coffee = "Coff",
+}
+
+-- UI Library
+local library = loadstring(game:HttpGetAsync('https://pastebin.com/raw/edJT9EGX'))()
+local window = library:CreateWindow("sushi shop moment")
+window:AddLabel({
+    text = "Made by egg salad"
+})
+window:AddLabel({
+    text = "Updated by Ezpi#0474"
+})
+window:AddToggle({
+    text = "Enabled",
+    flag = "enabled"
+})
+window:AddToggle({
+    text = "Ignore Players",
+    flag = "ignore"
+})
+library:Init()
+
+-- NoClip
+RunService.RenderStepped:Connect(function()
+    if library.flags.Enabled then
+        pcall(function()
+            Player.Character.Humanoid:ChangeState(11)
+        end)
+    end
+end)
+
+-- FireClickDetector
+function fire(Part, Check)
+    for _, A_1 in pairs(Part:GetDescendants()) do
+        if A_1:IsA("ProximityPrompt") and A_1.MaxActivationDistance ~= 0 then
+            return Check or fireproximityprompt(A_1)
+        end
+    end
+end
+
+-- Teleport
+function tp(Part)
+    -- Check if already close
+    if (Part.Position - PrimaryPart.Position).magnitude < 5 then
+        return
+    end
+    -- Teleport
+    PrimaryPart.CFrame = Part.CFrame
+end
+
+-- Amount Checker
+function amount(p)
+    for i,v in pairs(p:GetDescendants()) do
+        if v:IsA("TextLabel") then
+            return tonumber(v.Text:match("%d+"))
+        end
+    end
+end
+
+-- Being Used Check
+function using(station)
+    -- Nearby Players
+    local plrs = Players:GetPlayers()
+    for i = 2, #plrs do local v = plrs[i]
+        if v:DistanceFromCharacter(station.StandHere.Position) < 2 and library.flags.ignore == false then
+            return true
+        end
+    end
+    -- In-Use
+    return station.Using.Value ~= nil
+end
+
+-- Restock
+function restock(name)
+    -- Get Cost
+    local cost = stock[name].Price.Value * 10
+    -- Correct Name
+    local name = shop[name] or name
+    -- Use own wallet
+    Player.Character.PayWallet.Value = Player.attributes.Sales.Value < cost
+    -- Restock
+    firesignal(Player.PlayerGui.BuyStock[name].Buy.MouseButton1Click)
+end
+
+-- Get Cooking Stations
+local sushi = (function()
+    local femboy = {}
+    for i,v in pairs(gam:GetChildren()) do
+        if v:FindFirstChild("Using") and not v:FindFirstChild("Water") and v.PrimaryPart.Transparency ~= 1 then
+            table.insert(femboy,v)
+        end
+    end
+    return femboy
+end)()
+
+-- Get Dishing Stations
+local dish = (function()
+    local femboy = {}
+    for i,v in pairs(gam:GetChildren()) do
+        if v:FindFirstChild("Using") and v:FindFirstChild("Water") and v.PrimaryPart.Transparency ~= 1 then
+            table.insert(femboy,v)
+        end
+    end
+    return femboy
+end)()
+
+-- Get Coffee Machine
+local coffee = (function()
+    for i,v in pairs(gam:GetChildren()) do
+        if tonumber(v.Name) and v:FindFirstChild("Coffee", true) and v.PrimaryPart and v.PrimaryPart.Transparency ~= 1 then
+            return v
+        end
+    end
+end)()
+
+-- AutoFarm Functions
+local functions = {
+    -- Energy Check
+    energy = function()
+        -- Check
+        if Energy.Value < 10 then
+            -- Check & Restock Coffee
+            if stock.Coffee.Value == 0 then
+                restock("Coffee")
+                wait(.5)
+            else
+                -- C O N S U M E
+                repeat
+                    tp(coffee.PrimaryPart)
+                    wait()
+                    fireproximityprompt(coffee:FindFirstChild("ProximityPrompt", true))
+                until stock.Coffee.Value == 0 or Player.Character:FindFirstChildOfClass("Tool") or not library.flags.enabled
+                -- W A I T
+                repeat RunService.RenderStepped:wait() until not Player.Character:FindFirstChildOfClass("Tool") or not library.flags.enabled
+            end
+        end
+    end,
+    -- Cooking
+    cooking = function()
+        -- Count Sushi On Track
+        local count = 0
+        local cum = workspace:GetChildren()
+        for i = 1, #cum do local v = cum[i]
+            if v:FindFirstChild("Madeby") and v:FindFirstChild("XP") then
+                count = count + 1
+            end
+        end
+        -- Check if more food is needed
+        if amount(workspace.Counter) < count then
+            return
+        end
+        -- Check Stock
+        local recipe = ReplicatedStorage.Sushi[sushis(Player.attributes.Recipe.Value)]
+        for i,v in pairs(recipe:GetChildren()) do
+            if stock:FindFirstChild(v.Name) and stock[v.Name].Value < v.Value then
+                restock(v.Name)
+                return
+            end
+        end
+        -- Actual Cooking
+        for i,v in pairs(sushi) do
+            -- Check For Empty Base
+            if Energy.Value >= 10 and not using(v) and Player.attributes.Lv.Value >= v.Level.Value and fire(v,true) then
+                -- TP & Cook
+                repeat
+                    tp(v.StandHere)
+                    wait()
+                    fire(v)
+                until Making.Value ~= 0 or using(v) or not library.flags.enabled
+                -- Finish
+                repeat RunService.RenderStepped:wait() until Making.Value == 0 or not library.flags.enabled
+                return
+            end
+        end
+    end,
+    -- Washing
+    washing = function()
+        for i,v in pairs(dish) do
+            -- Check
+            if Energy.Value >= 10 and stock.PlatesDirty.Value > 0 and not using(v) and fire(v, true) then
+                -- TP & Dish
+                repeat
+                    tp(v.StandHere)
+                    wait()
+                    fire(v)
+                until Washing.Value ~= 0 or stock.PlatesDirty.Value <= 0 or using(v) or not library.flags.enabled
+                -- Finish
+                repeat RunService.RenderStepped:wait() until Washing.Value == 0 or not library.flags.enabled
+                return
+            end
+        end
+    end,
+}
+
+-- AutoFarm!
+while true do
+    for i,v in pairs(functions) do
+        if library.flags.enabled then
+            v()
+        end
+    end
+    wait()
+end

@@ -1,3 +1,5 @@
+--[[ Created by Ezpi#0474 ]]--
+
 --// Settings \\--
 local Delay = 0.5
 local AutoTeleport = true -- Move to next area

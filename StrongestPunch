@@ -28,6 +28,7 @@ while wait(Delay) do
     --// Collect Highest Value \\--
     if Collectable ~= nil then
         pcall(function()
+            Player.Character.PrimaryPart.CFrame = Collectable.PrimaryPart.CFrame
             firetouchinterest(Player.Character.PrimaryPart, Collectable.PrimaryPart, 0)
             firetouchinterest(Player.Character.PrimaryPart, Collectable.PrimaryPart, 1)
         end)

@@ -1,0 +1,134 @@
+--// Exploit Check \\--
+if not firetouchinterest then
+    while true do
+    end
+end
+
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// Services \\--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Data = Player:WaitForChild("stats"):WaitForChild("data")
+local Event = ReplicatedStorage:WaitForChild("event")
+
+--// Folders \\--
+local Beys = Workspace:WaitForChild("beyblades")
+local Mobs = Workspace:WaitForChild("mobs")
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Created by Ezpi#0474")
+Window:AddToggle({
+    text = "Enabled"
+})
+Window:AddToggle({
+    text = "Auto-Upgrade Strength",
+    flag = "strength"
+})
+Window:AddSlider({
+    text = 'Search Range',
+    flag = 'search',
+    min = 30,
+    max = 300,
+    value = 250
+})
+Window:AddSlider({
+    text = 'Attack Range',
+    flag = 'range',
+    min = 5,
+    max = 40,
+    value = 30
+})
+
+--// Get Targets \\--
+local Targets = Window:AddFolder("Targets")
+for _, A_1 in next, Mobs:GetChildren() do
+    if Library.flags[A_1.Name] ~= false then
+        Targets:AddToggle({
+            text = A_1.Name
+        })
+    end
+end
+
+--// Done! \\--
+Library:Init()
+
+--// Auto-Upgrade Strength \\--
+Data:WaitForChild("xp").Changed:Connect(function()
+    local Points = Data.lvl.Value * 2 - Data.atk.Value - Data.stam.Value - Data.def.Value - Data.speed.Value - Data.spec.Value - Data.awak.Value - Data.luck.Value - Data.pierce.Value
+    if Library.flags.strength and Library.flags.Enabled and Points > 0 then
+        for _ = 1, Points do
+            Event:FireServer("attri", tick(), "atk")
+        end
+    end
+end)
+
+--// Get Beyblade \\--
+function GetBey()
+    local Bey = Beys:FindFirstChild(Player.Name)
+    if Bey and Bey.PrimaryPart then
+        return Bey
+    end
+    return false
+end
+
+--// Get Nearest Target \\--
+function GetMob()
+    -- Bey Check
+    local Bey = GetBey()
+    if not Bey then
+        return false
+    end
+    -- Get Target
+    local Closest = false
+    local Distance = Library.flags.search
+	for _, A_1 in next, Mobs:GetChildren() do
+        if A_1.PrimaryPart and Library.flags.Enabled and Library.flags[A_1.Name] and A_1:FindFirstChild("health") and A_1.health.Value > 0 then
+            local New_Distance = (A_1.PrimaryPart.Position - Bey.PrimaryPart.Position).magnitude
+            if New_Distance < Distance then
+                Closest = A_1
+                Distance = New_Distance
+            end
+        end
+    end
+    return Closest
+end
+
+--// AutoFarm \\--
+while wait(0.1) do
+    -- Check farming conditions
+    local Mob = GetMob()
+    local Bey = GetBey()
+    if Library.flags.Enabled and Bey and Mob then
+        -- Move to target
+        local Humanoid = Bey:FindFirstChildOfClass("Humanoid")
+        Humanoid:MoveTo(Mob.PrimaryPart.Position)
+        -- Attack Target
+        while Bey.Parent and Library.flags.Enabled and Mob.PrimaryPart and Mob.Parent and Mob.health.Value > 0 and Library.flags[Mob.Name] and wait() do
+            Humanoid:MoveTo(Mob.PrimaryPart.Position)
+            if (Bey.PrimaryPart.Position - Mob.PrimaryPart.Position).magnitude < Library.flags.range then
+                firetouchinterest(Bey.PrimaryPart, Mob.PrimaryPart, 0)
+                firetouchinterest(Bey.PrimaryPart, Mob.PrimaryPart, 1)
+            end
+        end
+    -- Deploy Bey
+    elseif Library.flags.Enabled and not Bey then
+        Event:FireServer("launch", tick())
+        -- Timer
+        local Timer = tick() + 4
+        repeat
+            wait()
+        until GetBey() or tick() >= Timer
+    end
+end

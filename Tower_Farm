@@ -1,0 +1,47 @@
+--// Exploit Check \\--
+if #{fireclickdetector, firetouchinterest} ~= 2 then
+    while true do
+    end
+end
+
+--// Service \\--
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+--// Variable \\--
+local Player = Players.LocalPlayer
+local Tower = nil
+
+--// Get Tower \\--
+for _, A_1 in next, Workspace:GetChildren() do
+    if A_1:FindFirstChild("Owner") and A_1.Owner.Value == Player then
+        Tower = A_1
+        break
+    end
+end
+
+--// Tower Check \\--
+if Tower == nil then
+    warn("Not found :(")
+    return
+end
+
+--// AutoClick \\--
+local Click = Tower:WaitForChild("ClickDetector")
+RunService.RenderStepped:Connect(function()
+    fireclickdetector(Click, 1)
+end)
+
+--// Auto Upgrade \\--
+local Bricks = Player:WaitForChild("leaderstats"):WaitForChild("Bricks")
+Bricks.Changed:Connect(function()
+    for _, A_1 in next, {"Left", "Right"} do
+        local Button = Tower["PurchaseUpgradeButton" .. A_1].Head
+        if Button.Price.Value <= Bricks.Value then
+            local Root = Player.Character.PrimaryPart
+            firetouchinterest(Root, Button, 0)
+            firetouchinterest(Root, Button, 1)
+        end
+    end
+end)

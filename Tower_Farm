@@ -11,53 +11,31 @@ local Workspace = game:GetService("Workspace")
 
 --// Variable \\--
 local Player = Players.LocalPlayer
+local Tower = nil
 
--- UI Library
-local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
-local Window = Library:CreateWindow("Created by Ezpi#")
-Window:AddToggle({
-    text = "Auto Click",
-    flag = "click"
-})
-Window:AddToggle({
-    text = "Auto Upgrade",
-    flag = "upgrade"
-})
-Window:AddToggle({
-    text = "Collect Bricks & Birds",
-    flag = "bricks",
-    callback = function(A_2)
-        -- Check
-        if A_2 == false then
-            return
-        end
-        -- Collect
-        for _, A_1 in next, Workspace:GetChildren() do
-            if A_1.Name == "Brick" and A_1:FindFirstChild("ClickDetector") then
-                fireclickdetector(A_1.ClickDetector)
-            end
-        end
+--// Get Tower \\--
+for _, A_1 in next, Workspace:GetChildren() do
+    if A_1:FindFirstChild("Owner") and A_1.Owner.Value == Player then
+        Tower = A_1
+        break
     end
-})
-Library:Init()
+end
+
+--// Tower Check \\--
+if Tower == nil then
+    warn("Not found :(")
+    return
+end
 
 --// AutoClick \\--
+local Click = Tower:WaitForChild("ClickDetector")
 RunService.RenderStepped:Connect(function()
-    local Tower = Player:FindFirstChild("MyTower")
-    if Library.flags.click and Tower and Tower.Value then
-        fireclickdetector(Tower.Value.ClickDetector)
-    end 
+    fireclickdetector(Click, 1)
 end)
 
 --// Auto Upgrade \\--
 local Bricks = Player:WaitForChild("leaderstats"):WaitForChild("Bricks")
 Bricks.Changed:Connect(function()
-    -- Check
-    if Library.flags.upgrade == false or not Player:FindFirstChild("MyTower") or not Player.MyTower.Value then
-        return
-    end
-    -- Upgrade
-    local Tower = Player.MyTower.Value
     for _, A_1 in next, {"Left", "Right"} do
         local Button = Tower["PurchaseUpgradeButton" .. A_1].Head
         if Button.Price.Value <= Bricks.Value then
@@ -67,37 +45,3 @@ Bricks.Changed:Connect(function()
         end
     end
 end)
-
---// Brick Collector \\--
-Workspace.ChildAdded:Connect(function(A_1)
-    wait(0.1)
-    if A_1.Name:find("Brick") and Library.flags.bricks then
-        local Click = A_1:WaitForChild("ClickDetector")
-        fireclickdetector(Click)
-    end
-end)
-
---// Bird Collector \\--
-while wait() do
-    -- Check
-    if Library.flags.bricks and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("TouchTheSky") and Player.Character.TouchTheSky:FindFirstChild("RemoteEvent") then
-        -- Variables
-        local Root = Player.Character.HumanoidRootPart
-        local Event = Player.Character.TouchTheSky.RemoteEvent
-        -- Collect Birds
-        for _, A_1 in next, Workspace:GetChildren() do
-            if A_1:IsA("Model") and A_1.Name:find("goll") then
-                for _, A_2 in next, A_1:GetDescendants() do
-                    if A_2:IsA("ClickDetector") then
-                        fireclickdetector(A_2)
-                    elseif A_2:IsA("TouchTransmitter") then
-                        firetouchinterest(Root, A_2.Parent, 0)
-                        firetouchinterest(Root, A_2.Parent, 1)
-                    elseif A_2.Name == "Hitbox" then
-                        Event:FireServer(A_2)
-                    end
-                end
-            end
-        end
-    end
-end

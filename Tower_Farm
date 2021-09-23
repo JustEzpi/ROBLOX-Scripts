@@ -17,9 +17,10 @@ local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/
 local Window = Library:CreateWindow("Created by Ezpi#0474")
 Window:AddToggle({
     text = "Auto Click",
+    flag = "click"
     callback = function(A_1)
         -- Click!
-        while A_1 and wait(Library.flags.speed) do
+        while Library.flags.click and wait(Library.flags.speed) do
             local Tower = Player:FindFirstChild("MyTower")
             if Tower and Tower.Value then
                 fireclickdetector(Tower.Value.ClickDetector)

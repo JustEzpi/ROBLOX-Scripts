@@ -17,7 +17,7 @@ local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/
 local Window = Library:CreateWindow("Created by Ezpi#0474")
 Window:AddToggle({
     text = "Auto Click",
-    flag = "click"
+    flag = "click",
     callback = function(A_1)
         -- Click!
         while Library.flags.click and wait(Library.flags.speed) do

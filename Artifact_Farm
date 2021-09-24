@@ -1,0 +1,97 @@
+-- Created by Ezpi#0474
+
+--// Services \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Hit = ReplicatedStorage:WaitForChild("RemoteEvent"):WaitForChild("SwordHit")
+local Draw = ReplicatedStorage:WaitForChild("PetEvents"):WaitForChild("LuckDrawBuyEvent")
+local Gold = Player:WaitForChild("DataInfo"):WaitForChild("Gold")
+
+--// Folders \\--
+local NPC_Folder = Workspace:WaitForChild("NPCFolder")
+local Coin_Folder = Workspace:WaitForChild("Eggs")
+
+--// Modules \\--
+local Player_Data = require(Player:WaitForChild("PlayerScripts"):WaitForChild("PlayerPetData"))
+local World_Data = require(ReplicatedStorage:WaitForChild("ModuleScripts"):WaitForChild("WorldData"))
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Created by Ezpi#0474")
+-- Toggle
+Window:AddToggle({
+    text = "AutoFarm",
+	flag = "Enabled"
+})
+Window:AddToggle({
+    text = "Auto Buy",
+	flag = "buy"
+})
+-- Distance
+Window:AddSlider({
+    text = 'Distance',
+    min = -22,
+    max = 22,
+    value = 10,
+    float = 0.5
+})
+-- Target Folder
+local Target_Window = Window:AddFolder("Targets")
+for _, A_1 in next, NPC_Folder:GetChildren() do
+    if A_1:IsA("Model") and Library.flags[A_1.Name] ~= false then
+        Target_Window:AddToggle({
+            text = A_1.Name,
+            callback = function(A_1)
+                if A_1 == false and Player.Character and Player.Character.PrimaryPart then
+                    Player.Character.PrimaryPart.CanCollide = true
+                end
+            end
+        })
+    end
+end
+Library:Init()
+
+--// NoClip \\--
+RunService.RenderStepped:Connect(function()
+    if Library.flags.Enabled and Player.Character and Player.Character.PrimaryPart then
+        Player.Character.PrimaryPart.Velocity = Vector3.new()
+        Player.Character.PrimaryPart.CanCollide = false
+    end
+end)
+
+--// Farm \\--
+while wait(0.1) do
+	if Library.flags.Enabled == true then
+		-- Auto Farm
+		for _, A_1 in next, NPC_Folder:GetChildren() do
+			if A_1.PrimaryPart and Library.flags[A_1.Name] == true and A_1:FindFirstChild("Humanoid") and A_1.Humanoid.Health > 0 then
+				repeat
+					Player.Character.PrimaryPart.CFrame = A_1.PrimaryPart.CFrame + Vector3.new(0, Library.flags.Distance, 0)
+					wait()
+					Hit:FireServer(A_1.Humanoid, A_1, 1)
+				until Library.flags[A_1.Name] == false or Library.flags.Enabled == false or A_1.Parent ~= NPC_Folder or A_1.Humanoid.Health <= 0
+				break
+			end
+		end
+		-- Auto Buy
+		if Library.flags.buy then
+			local Amount = Gold.Value
+			local World = World_Data[Player_Data:GetBaseData().currentWorldID]
+			local Price = World.DrawPrice
+			-- Check required
+			if Amount >= Price then
+				local Location = Workspace:WaitForChild(World.DisplayName):WaitForChild(World.DisplayName).BasePart
+				repeat
+					Player.Character.PrimaryPart.CFrame = Location.CFrame + Vector3.new(0, Library.flags.Distance, 0)
+					wait()
+					Draw:FireServer()
+				until Gold.Value < Price or Library.flags.Enabled == false or Library.flags.buy == false
+			end
+		end
+	end
+end

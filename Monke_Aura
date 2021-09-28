@@ -1,0 +1,115 @@
+--// Services \\--
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local Workspace = game:GetService("Workspace")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Colors = {}
+
+--// Teams \\--
+local Monke = Teams:WaitForChild("Monke")
+local Human = Teams:WaitForChild("Humans")
+
+--// Get Monkeys \\--
+for _, A_1 in next, Workspace:WaitForChild("Regen"):GetChildren() do
+    if A_1.Name ~= "oofplayer" then
+        local Color = tostring(A_1.BrickColor)
+        Colors[Color] = A_1
+    end
+end
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Smacker by Ezpi#0474")
+Window:AddToggle({
+    text = "Enabled"
+})
+Window:AddToggle({
+    text = "Infinite Range",
+    flag = "inf"
+})
+Window:AddSlider({
+    text = 'Range',
+    min = 6,
+    max = 32
+})
+local Transform = Window:AddFolder("Monkeys")
+for A_1, A_2 in next, Colors do
+    Transform:AddButton({
+        text = A_1,
+        callback = function()
+            local Root = Player.Character and Player.Character.PrimaryPart
+            if Root then
+                firetouchinterest(Root, A_2, 0)
+                firetouchinterest(Root, A_2, 1)
+            end
+        end
+    })
+end
+Library:Init()
+
+--// Get Weapon \\--
+function GetWeapon()
+    -- Character Check
+    if not Player.Character or not Player.Character:FindFirstChild("Humanoid") or Player.Character.Humanoid.Health <= 0 then
+        return false
+    end
+    -- Monkey Weapon
+    local Char = Player.Character
+    local Tool = Char:FindFirstChildOfClass("Tool")
+    if Player.Team == Monke and Char:FindFirstChild("Left Arm") and Char:FindFirstChild("Right Arm") then
+        return {
+            Char["Left Arm"],
+            Char["Right Arm"]
+        }
+    -- Human Weapon
+    elseif Player.Team == Human and Tool and Tool:FindFirstChild("Handle") then
+        return {
+            Tool.Handle
+        }
+    end
+    -- Nope
+    return false
+end
+
+--// Get Closest Enemy Player \\--
+function GetEnemy()
+    -- Variables
+    local Enemy = false
+    local Range = Library.flags.Range
+    -- Infinite Range Option
+    if Library.flags.inf then
+        Range = math.huge
+    end
+    -- Get Closest Enemy
+    for _, A_1 in next, Players:GetPlayers() do
+        local Char = A_1.Character
+        if A_1.Team ~= Player.Team and Char and Char.PrimaryPart and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 then
+            local Distance = Player:DistanceFromCharacter(Char.PrimaryPart.Position)
+            if Distance < Range then
+                Range = Distance
+                Enemy = Char.PrimaryPart
+            end
+        end
+    end
+    return Enemy
+end
+
+--// Smacker \\--
+while wait() do
+    -- Check
+    local Weapons = GetWeapon()
+    local Enemy = GetEnemy()
+    if Library.flags.Enabled and Weapons ~= false and Enemy ~= false then
+        -- Attack
+        for _, Weapon in next, Weapons do
+            if Weapon.Parent:IsA("Tool") then
+                Weapon.Parent:Activate()
+            end
+            -- Hit Enemy
+            firetouchinterest(Weapon, Enemy, 0)
+            firetouchinterest(Weapon, Enemy, 1)
+        end
+    end
+end

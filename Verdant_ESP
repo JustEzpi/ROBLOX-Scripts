@@ -1,0 +1,115 @@
+--// Trinket ID's \\--
+local Trinket_ID = {
+    [7051953872] = "Antique Mask",
+    [7057269362] = "Cursed Bracelet",
+    [7051953820] = "Fraudulent Crown",
+    [7219489387] = "Glowing Rocks",
+    [7249636576] = "Viral Gem",
+    [7066734910] = "Torn Spellbook",
+    [6967864980] = "Mana Crystal"
+}
+
+--// Exploit Check \\--
+if getspecialinfo == nil then
+    while true do
+    end
+end
+
+--// Services \\--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Folder = Workspace:WaitForChild("AmbientAreas")
+local Trinkets = {}
+
+--// Get Trinket Name \\--
+function IdentifyTrinket(A_1)
+    -- Variable
+    local Handle = A_1.Handle
+    -- Rusted Lockbox
+    if #Handle:GetChildren() == 5 and Handle:FindFirstChild("Union") then
+        return "Rusted Lockbox"
+    end
+    -- Lost Hourglass
+    if Handle:FindFirstChild("frame") and Handle.frame:FindFirstChild("pyramid") then
+        return "Lost Hourglass"
+    end
+    -- Soul Coin
+    if Handle.Size == Vector3.new(1, 0.6, 0.6) and Handle.Material == Enum.Material.Neon and Handle.Shape == Enum.PartType.Cylinder then
+        return "Soul Coin"
+    end
+    -- Special
+    if Handle:IsA("UnionOperation") then
+        local Asset = string.split(getspecialinfo(Handle).AssetId, "=")[2]
+        return Trinket_ID[tonumber(Asset)] or Asset
+    elseif Handle:IsA("MeshPart") then
+        local Mesh = string.split(Handle.MeshId, "//")[2]
+        return Trinket_ID[tonumber(Mesh)] or Mesh
+    end
+    -- Unknown
+    return "Unknown Trinket"
+end
+
+--// UI & ESP Library \\--
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+
+--// ESP Settings \\--
+ESP.Boxes = false
+ESP.Players = false
+ESP.Tracers = false
+
+--// Apply Item ESP \\--
+ESP:AddObjectListener(Folder, {
+    Color = Color3.new(0.2, 1, 0.5),
+    Type = "Model",
+    PrimaryPart = function(A_1)
+        while not A_1.PrimaryPart do
+            wait()
+        end
+        return A_1.PrimaryPart
+    end,
+    Validator = function(A_1)
+        return A_1.Parent.Name == "TrinketSpawn"
+    end,
+    CustomName = IdentifyTrinket,
+    IsEnabled = function(A_1)
+        return Player:DistanceFromCharacter(A_1.PrimaryPart.Position) <= Library.flags.Range
+    end,
+    Recursive = true
+})
+
+--// UI Library \\--
+local Window = Library:CreateWindow("ESP by Ezpi#0474")
+-- ESP Toggle
+Window:AddToggle({
+    text = "Enabled",
+    callback = function(A_1)
+        ESP:Toggle(A_1)
+    end
+})
+-- Player ESP
+Window:AddToggle({
+    text = "Player ESP",
+    callback = function(A_1)
+        ESP.Players = A_1
+    end
+})
+-- Tracers
+Window:AddToggle({
+    text = "Tracers",
+    callback = function(A_1)
+        ESP.Tracers = A_1
+    end
+})
+-- Range
+Window:AddSlider({
+    text = 'Range',
+    min = 100,
+    max = 1600,
+    float = 10,
+})
+Library:Init()

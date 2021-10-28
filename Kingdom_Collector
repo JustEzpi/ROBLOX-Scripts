@@ -1,0 +1,158 @@
+--// Exploit Check \\--
+if fireproximityprompt == nil then
+    while true do
+    end
+end
+
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// Services \\--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Plots = Workspace:WaitForChild("TycoonPlots")
+local Items = Workspace:WaitForChild("Items")
+local Collect = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Tycoon"):WaitForChild("CollectCurrency")
+local Combat = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat"):WaitForChild("CombatActionEvent")
+local Entities = Workspace:WaitForChild("Regions")
+local Resources = {"Wood", "Stone", "Coin"}
+
+--// Get Correct Plot \\--
+local Closest, Plot = false, false
+local Distance = 1000
+for _, A_1 in next, Plots:GetChildren() do
+    local New_Distance = Player:DistanceFromCharacter(A_1.PrimaryPart.Position)
+    if New_Distance < Distance then
+        Distance = New_Distance
+        Closest = A_1:FindFirstChildOfClass("Model") or false
+    end
+end
+
+--// Plot Check \\--
+if Closest == false then
+    warn("Patched :(")
+    return
+end
+Plot = Closest
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Collector by Ezpi#0474")
+Window:AddToggle({
+    text = "Auto-Collector",
+    flag = "Enabled",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Collect
+        for _, A_1 in next, Resources do
+            Collect:FireServer(A_1 .. "Collector")
+        end
+    end
+})
+Window:AddToggle({
+    text = "AutoFarm",
+    callback = function(A_1)
+        -- Check
+        if A_1 == true or Player.Character == nil or Player.Character.PrimaryPart == nil then
+            return
+        end
+        -- Teleport Back
+        Player.Character.PrimaryPart.CFrame = Plot.Spawnpoint.CFrame
+    end
+})
+Window:AddSlider({
+    text = 'Distance',
+    min = -16,
+    max = 16
+})
+Library:Init()
+
+--// NoClip \\--
+RunService.RenderStepped:Connect(function()
+    if Library.flags.AutoFarm then
+        pcall(function()
+            Player.Character.Humanoid:ChangeState(11)
+        end)
+    end
+end)
+
+--// Auto-Collector \\--
+for _, A_1 in next, Resources do
+    local Collector = Plot:FindFirstChild(A_1 .. "CollectorValue")
+    if Collector then
+        Collector.Changed:Connect(function()
+            if Library.flags.Enabled == true and Collector.Value > 0 then
+                Collect:FireServer(A_1 .. "Collector")
+            end
+        end)
+    end
+end
+
+--// Get Enemy \\--
+function GetEnemy()
+    -- Variables
+    local Lowest = math.huge
+    local Target = false
+    -- Get lowest health enemy
+    for _, A_1 in next, Entities:GetDescendants() do
+        if A_1:IsA("Model") and A_1.PrimaryPart and A_1:FindFirstChild("Humanoid") and Players:GetPlayerFromCharacter(A_1) == nil then
+            local Health = A_1.Humanoid.Health
+            if Health > 0 and Health < Lowest then
+                Lowest = Health
+                Target = A_1
+            end
+        end
+    end
+    return Target
+end
+
+--// AutoFarm \\--
+while wait(0.1) do
+    local Enemy = GetEnemy()
+    if Library.flags.AutoFarm == true and Enemy ~= false then
+        -- Kill Enemy
+        while Enemy.Parent ~= nil and Enemy:FindFirstChild("target", true) and Library.flags.AutoFarm == true do
+            if Player.Character and Player.Character.PrimaryPart then
+                Player.Character.PrimaryPart.CFrame = CFrame.new(Enemy.PrimaryPart.Position) * CFrame.new(0, 0, 2) + Vector3.new(0, Library.flags.Distance, 1)
+                VirtualInputManager:SendMouseButtonEvent(1, 1, 0, true, game, 1)
+                VirtualInputManager:SendMouseButtonEvent(1, 1, 0, false, game, 1)
+            end
+            wait()
+            if isnetworkowner(Enemy.PrimaryPart) then
+                Enemy.Humanoid.Health = 0
+            end
+        end
+        -- Wait for item
+        repeat
+            wait()
+        until #Items:GetChildren() > 0 or Library.flags.AutoFarm == false
+        -- Collect Items
+        while #Items:GetChildren() ~= 0 and Library.flags.AutoFarm == true do
+            for _, A_1 in next, Items:GetChildren() do
+                if A_1.PrimaryPart and A_1.PrimaryPart:FindFirstChild("ProximityPrompt") then
+                    repeat
+                        if Player.Character and Player.Character.PrimaryPart then
+                            Player.Character.PrimaryPart.CFrame = CFrame.new(A_1.PrimaryPart.Position) + Vector3.new(0, Library.flags.Distance, 0)
+                        end
+                        wait()
+                        fireproximityprompt(A_1.PrimaryPart.ProximityPrompt)
+                    until A_1.Parent ~= Items or Library.flags.AutoFarm == false
+                end
+            end
+        end
+    end
+end

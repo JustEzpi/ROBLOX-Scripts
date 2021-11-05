@@ -1,1 +1,138 @@
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
 
+--// Services \\--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Event = ReplicatedStorage:WaitForChild("Remote"):WaitForChild("Weapon"):WaitForChild("Use")
+
+--// UI & ESP Library \\--
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+
+--// ESP Settings \\--
+ESP.TeamMates = false
+ESP:Toggle(false)
+
+--// UI \\--
+local Window = Library:CreateWindow("Smacker by Ezpi#0474")
+Window:AddToggle({
+    text = "Enabled"
+})
+Window:AddToggle({
+    text = "Player ESP",
+    callback = function(A_1)
+        ESP:Toggle(A_1)
+    end
+})
+Window:AddButton({
+    text = "Reset",
+    callback = function()
+        local Humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+        if Humanoid then
+            Humanoid.Health = 0
+        end
+    end
+})
+local Folder = Window:AddFolder("Transformations")
+if firetouchinterest then
+    local Found = {}
+    for _, A_1 in next, Workspace:WaitForChild("Scripted"):WaitForChild("TransformBrick"):GetChildren() do
+        local Touch = A_1:FindFirstChild("TouchInterest", true)
+        if Touch and A_1:FindFirstChild("Type") and table.find(Found, A_1.Type.Value) == nil then
+            table.insert(Found, A_1.Type.Value)
+            local Touch = Touch.Parent
+            Folder:AddButton({
+                text = A_1.Type.Value,
+                callback = function()
+                    local Primary = Player.Character and Player.Character.PrimaryPart
+                    if Primary then
+                        firetouchinterest(Primary, Touch, 0)
+                        firetouchinterest(Primary, Touch, 1)
+                    end
+                end
+            })
+        end
+    end
+    Folder:AddButton({
+        text = "Shade",
+        callback = function()
+            local Primary = Player.Character and Player.Character.PrimaryPart
+            local Touch = Workspace.Scripted.TransformBrick.Shade:FindFirstChild("TouchInterest", true).Parent
+            if Primary then
+                firetouchinterest(Primary, Touch, 0)
+                firetouchinterest(Primary, Touch, 1)
+            end
+        end
+    })
+end
+local ToxicRabbit = ReplicatedStorage:FindFirstChild("ToxicPuddleTransformed")
+if ToxicRabbit then
+    Folder:AddButton({
+        text = "Toxic Rabbit",
+        callback = function()
+            for i = 1, 6 do
+                ToxicRabbit:FireServer()
+            end
+        end
+    })
+end
+Library:Init()
+
+--// Get Weapon \\--
+function GetWeapon()
+    -- Character Check
+    if not Player.Character or not Player.Character:FindFirstChild("Humanoid") or Player.Character.Humanoid.Health <= 0 then
+        return false
+    end
+    -- Get Weapon
+    local Char = Player.Character
+    local Tool = Char:FindFirstChildOfClass("Tool")
+    if Tool and Tool:FindFirstChild("Handle") then
+        return Tool
+    end
+    -- Nope
+    return false
+end
+
+--// Get Closest Enemy Player \\--
+function GetEnemy()
+    -- Variables
+    local Enemy = false
+    local Range = 5.8
+    -- Get Closest Enemy
+    for _, A_1 in next, Players:GetPlayers() do
+        local Char = A_1.Character
+        if A_1.Team ~= Player.Team and Char and Char:FindFirstChild("HumanoidRootPart") and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and Char:FindFirstChild("ForceField") == nil then
+            local Distance = Player:DistanceFromCharacter(Char.HumanoidRootPart.Position)
+            if Distance < Range then
+                Range = Distance
+                Enemy = Char.HumanoidRootPart
+            end
+        end
+    end
+    return Enemy
+end
+
+--// Smacker \\--
+while task.wait() do
+    -- Check
+    local Weapons = GetWeapon()
+    local Enemy = GetEnemy()
+    if Library.flags.Enabled and Weapons ~= false and Enemy ~= false then
+        print(Enemy, Player:DistanceFromCharacter(Enemy.Position))
+        for i = 1, 5 do
+            Event:FireServer(Enemy)
+        end
+        task.wait(1.1)
+    end
+end

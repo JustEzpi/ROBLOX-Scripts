@@ -1,0 +1,60 @@
+--// Exploit Check \\--
+if #{hookmetamethod, checkcaller} ~= 2 then
+    while true do
+    end
+end
+
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// Service \\--
+local Players = game:GetService("Players")
+
+--// Variable \\--
+local Player = Players.LocalPlayer
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Expander by Ezpi#0474")
+Window:AddSlider({
+    text = "Size",
+    min = 2,
+    max = 16,
+    float = 0.1
+})
+Library:Init()
+
+--// Bypass \\--
+local OldNameCall;
+OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    local Method = getnamecallmethod()
+    if Method == "InvokeServer" then
+        if (Self.Name == "NotifyViolation" or Self.Name == "Set1000") then
+            return wait(math.huge)
+        end
+    elseif Method == "GetAttribute" and Self.Name == "Workspace" then
+        return true
+    end
+    return OldNameCall(Self, ...)
+end)
+
+--// Hitbox Expander \\--
+while wait() do
+    -- Size Variables
+    local SizeNumber = Library.flags.Size
+    local ChangedSize = Vector3.new(SizeNumber, SizeNumber, SizeNumber)
+    -- Expander
+    for _, A_1 in next, Players:GetPlayers() do
+        local Primary = A_1.Character and A_1.Character.PrimaryPart
+        if Primary and A_1 ~= Player then
+            Primary.Size = ChangedSize
+            Primary.CanCollide = false
+            Primary.Transparency = 0.8
+        end
+    end
+end

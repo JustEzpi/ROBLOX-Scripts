@@ -1,0 +1,282 @@
+--// Exploit Check \\--
+if firetouchinterest == nil then
+    while true do
+    end
+end
+
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
+--// Services \\--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Teams = {}
+
+--// Folders \\--
+local Barbarians = Workspace:WaitForChild("Barbarians")
+local Karts = Workspace:WaitForChild("Karts")
+local Rice = Workspace:WaitForChild("Rice")
+
+--// Get Teams \\--
+for _, Team in next, game:GetService("Teams"):GetChildren() do
+    table.insert(Teams, Team.Name)
+end
+table.sort(Teams)
+
+--// Libraries \\--
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Generic GUI by Ezpi#0474")
+
+--// General \\--
+
+-- ESP
+ESP:Toggle(false)
+Window:AddToggle({
+    text = "ESP",
+    callback = function(A_1)
+        ESP:Toggle(A_1)
+    end
+})
+
+-- Auto Sprint
+local Movement_Keys = {"W", "A", "S", "D"}
+Window:AddToggle({
+    text = "Auto Sprint",
+    flag = "Sprint"
+})
+UserInputService.InputBegan:Connect(function(Input, Process)
+    if Library.flags.Sprint and UserInputService:IsKeyDown(Enum.KeyCode.Q) == false and table.find(Movement_Keys, Input.KeyCode.Name) and Process == false then
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+        local Down = true
+        while Down and task.wait() do
+            Down = false
+            for _, A_1 in next, Movement_Keys do
+                if UserInputService:IsKeyDown(Enum.KeyCode[A_1]) then
+                    Down = true
+                end
+            end
+        end
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+    end
+end)
+
+--// Touch Function \\--
+function Touch(Part, Touching)
+    pcall(function()
+        firetouchinterest(Part, Touching, 0)
+        firetouchinterest(Part, Touching, 1)
+    end)
+end
+
+--// Get Healthy Player \\--
+function GetHealthy()
+    local Closest = false
+    local Distance = Library.flags.Heal_Distance
+    for _, A_1 in next, Players:GetPlayers() do
+        local Char = A_1.Character
+        if A_1 ~= Player and Library.flags[A_1.Team.Name .. "_Heal"] == true and Char and Char.PrimaryPart and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and Char.Humanoid.Health < Char.Humanoid.MaxHealth then
+            local Dist = Player:DistanceFromCharacter(Char.PrimaryPart.Position)
+            if Dist < Distance then
+                Distance = Dist
+                Closest = Char.PrimaryPart
+            end
+        end
+    end
+    return Closest
+end
+
+--// Get Barbarian Player/NPC \\--
+function GetBarbarian()
+    local Distance = 10
+    -- Player Barbarian
+    for _, A_1 in next, Players:GetPlayers() do
+        local Char = A_1.Character
+        if Char and A_1 ~= Player and A_1.Team.Name == "Barbarian" and Char.PrimaryPart and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and Player:DistanceFromCharacter(Char.PrimaryPart.Position) <= Distance then
+            return Char.PrimaryPart
+        end
+    end
+    -- NPC Barbarian
+    for _, A_1 in next, Barbarians:GetChildren() do
+        if A_1:FindFirstChild("Humanoid") and A_1.Humanoid.Health > 0 and A_1:FindFirstChild("HumanoidRootPart") and Player:DistanceFromCharacter(A_1.HumanoidRootPart.Position) <= 10 then
+            return A_1.HumanoidRootPart
+        end
+    end
+    return false
+end
+
+--// Get Closest Rice \\--
+function GetRice(Sickle)
+    local Closest = false
+    local Distance = 9
+    for _, A_1 in next, Rice:GetChildren() do
+        local Middle = A_1:FindFirstChild("Middle", true)
+        if Middle and A_1:FindFirstChild("Health") and A_1.Health.Value > 0 then
+            local Dist = (Sickle.Position - Middle.Position).magnitude
+            if Dist < Distance then
+                Distance = Dist
+                Closest = Middle
+            end
+        end
+    end
+    return Closest
+end
+
+--// Doctor \\--
+local Doctor = Window:AddFolder("Doctor")
+Doctor:AddToggle({
+    text = "Auto Heal",
+    flag = "Heal",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Auto-Heal
+        while Library.flags.Heal do
+            local MedKit = Player.Character and Player.Character:FindFirstChild("Bandage")
+            if MedKit and MedKit:FindFirstChild("Handle") then
+                local To_Heal = GetHealthy()
+                if To_Heal ~= false then
+                    MedKit:Activate()
+                    Touch(MedKit.Handle, To_Heal)
+                end
+            end
+            task.wait(0.1)
+        end
+    end,
+})
+Doctor:AddSlider({
+    text = "Heal Distance",
+    min = 5,
+    max = 100,
+    float = 2,
+    flag = "Heal_Distance"
+})
+local Heal_Selection = Doctor:AddFolder("Teams to Heal")
+for _, A_1 in next, Teams do
+    Heal_Selection:AddToggle({
+        text = A_1,
+        flag = A_1 .. "_Heal"
+    })
+end
+
+--// Guard \\--
+local Guard = Window:AddFolder("Guard")
+Guard:AddToggle({
+    text = "Arrest Aura",
+    flag = "Arrest",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Arrest Aura
+        while Library.flags.Arrest do
+            local Distance = 13
+            local Arrest_Tool = Player.Character and Player.Character:FindFirstChild("Handcuffs")
+            if Arrest_Tool and Arrest_Tool:FindFirstChild("Handle") then
+                for _, A_1 in next, Players:GetPlayers() do
+                    local Stats = A_1:FindFirstChild("stats")
+                    local Char = A_1.Character
+                    if A_1 ~= Player and Stats and Char and Char.PrimaryPart and Stats:FindFirstChild("Arrestable") and Stats.Arrestable.Value == true and Player:DistanceFromCharacter(Char.PrimaryPart.Position) <= Distance then
+                        Arrest_Tool:Activate()
+                        Touch(Arrest_Tool.Handle, Char.PrimaryPart)
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+    end
+})
+Guard:AddToggle({
+    text = "Sword Aura [Barbarians]",
+    flag = "Barbarian_Aura",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Sword Aura
+        while Library.flags.Barbarian_Aura do
+            local Sword = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            if Sword and Sword.Name:find("Sword") and Sword:FindFirstChild("Handle") and Sword.Handle:FindFirstChild("TouchInterest") then
+                local To_Attack = GetBarbarian()
+                if To_Attack ~= false then
+                    Sword:Activate()
+                    Touch(Sword.Handle, To_Attack)
+                end
+            end
+            task.wait()
+        end
+    end
+})
+
+--// Landlord \\--
+local Landlord = Window:AddFolder("Landlord")
+Landlord:AddToggle({
+    text = "Rent Collection Aura",
+    flag = "Rent",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Collect Aura
+        while Library.flags.Rent do
+            local Distance = 15
+            local Rent_Tool = Player.Character and Player.Character:FindFirstChild("Collect Rent")
+            if Rent_Tool and Rent_Tool:FindFirstChild("Handle") then
+                for _, A_1 in next, Players:GetPlayers() do
+                    local Stats = A_1:FindFirstChild("stats")
+                    local Char = A_1.Character
+                    if A_1 ~= Player and Stats and Char and Char.PrimaryPart and Stats:FindFirstChild("RentDue") and Stats.RentDue.Value > 0 and Player:DistanceFromCharacter(Char.PrimaryPart.Position) <= Distance then
+                        Rent_Tool:Activate()
+                        Touch(Rent_Tool.Handle, Char.PrimaryPart)
+                    end
+                end
+            end            
+            task.wait()
+        end
+    end
+})
+
+--// FarmKart \\--
+local FarmKart = Window:AddFolder("FarmKart")
+FarmKart:AddToggle({
+    text = "Rice Aura",
+    flag = "Rice",
+    callback = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Get Vehicle
+        local Kart = Karts:FindFirstChild(Player.Name)
+        local Seat = Kart and Kart:FindFirstChild("VehicleSeat")
+        if Seat then
+            -- Rice Aura
+            while Library.flags.Rice and Karts:FindFirstChild(Player.Name) and Kart do
+                local Rice_To_Cut = GetRice(Kart:FindFirstChild("RightSickle"))
+                if Rice_To_Cut ~= false then
+                    Touch(Kart.RightSickle, Rice_To_Cut)
+                    Touch(Kart.LeftSickle, Rice_To_Cut)
+                end
+                task.wait()
+            end
+        end
+    end
+})
+
+--// Done! \\--
+Library:Init()

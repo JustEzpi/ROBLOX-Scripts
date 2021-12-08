@@ -295,29 +295,35 @@ Barbarian:AddToggle({
     end
 })
 
---// FarmKart \\--
-local FarmKart = Window:AddFolder("FarmKart")
-FarmKart:AddToggle({
+--// Farming \\--
+local Farming = Window:AddFolder("Farming")
+Farming:AddToggle({
     text = "Rice Aura",
     flag = "Rice",
     callback = function(A_1)
-        -- Check
-        if A_1 == false then
-            return
-        end
-        -- Get Vehicle
-        local Kart = Karts:FindFirstChild(Player.Name)
-        local Seat = Kart and Kart:FindFirstChild("VehicleSeat")
-        if Seat then
-            -- Rice Aura
-            while Library.flags.Rice and Karts:FindFirstChild(Player.Name) and Kart do
+        -- Rice Farming
+        while Library.flags.Rice do
+            -- Variables
+            local Kart = Karts:FindFirstChild(Player.Name)
+            local Seat = Kart and Kart:FindFirstChild("VehicleSeat")
+            local Sickle = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            -- Vehicle
+            if Seat and Kart:FindFirstChild("RightSickle") and Kart:FindFirstChild("LeftSickle") then
                 local Rice_To_Cut = GetRice(Kart:FindFirstChild("RightSickle"))
                 if Rice_To_Cut ~= false then
                     Touch(Kart.RightSickle, Rice_To_Cut)
                     Touch(Kart.LeftSickle, Rice_To_Cut)
                 end
-                task.wait()
+            -- Sickle
+            elseif Sickle and Sickle.Name:find("Sickle") and Sickle:FindFirstChild("Handle") then
+                local Rice_To_Cut = GetRice(Sickle.Handle)
+                if Rice_To_Cut ~= false then
+                    Sickle:Activate()
+                    Touch(Sickle.Handle, Rice_To_Cut)
+                    Touch(Sickle.Handle, Rice_To_Cut)
+                end
             end
+            task.wait()
         end
     end
 })

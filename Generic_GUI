@@ -16,6 +16,7 @@ end
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 --// Variables \\--
@@ -26,7 +27,12 @@ local Teams = {}
 --// Folders \\--
 local Barbarians = Workspace:WaitForChild("Barbarians")
 local Karts = Workspace:WaitForChild("Karts")
-local Rice = Workspace:WaitForChild("Rice")
+local Houses = Workspace:WaitForChild("Houses")
+local Stores = Workspace:WaitForChild("Stores")
+local Harvest = {
+    Rice = Workspace:WaitForChild("Rice"),
+    Trees = Workspace:WaitForChild("Trees")
+}
 
 --// Get Teams \\--
 for _, Team in next, game:GetService("Teams"):GetChildren() do
@@ -72,13 +78,30 @@ UserInputService.InputBegan:Connect(function(Input, Process)
     end
 end)
 
+-- Rejoin
+Window:AddButton({
+    text = "Rejoin Server",
+    callback = function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
+    end
+})
+
+--// Get Tool \\--
+function GetTool(Name)
+    local Tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+    if Tool and Tool:FindFirstChild("Handle") and Tool.Name:find(Name) then
+        return Tool
+    end
+    return false
+end
+
 --// Get Barbarian Player/NPC \\--
 function GetClosestEnemy(Handle, Mag)
     -- Variables
     local Closest = false
     local Distance = Mag
     -- Enemy Barbarian
-    if Player.Team.Name ~= "Barbarian" then
+    if Player.Team.Name ~= "Barbarian" and Library.flags.Barbarian_SwordAura == true then
         for _, A_1 in next, Barbarians:GetChildren() do
             if A_1:FindFirstChild("Humanoid") and A_1.Humanoid.Health > 0 and A_1:FindFirstChild("HumanoidRootPart") then
                 local Dist = (Handle - A_1.HumanoidRootPart.Position).magnitude
@@ -103,6 +126,36 @@ function GetClosestEnemy(Handle, Mag)
     return Closest
 end
 
+--// Get Closest Structure \\--
+function GetClosestStructure(Handle)
+    local Distance = Library.flags.Farming_Range + 2
+    local Pos = Handle.Position
+    -- Houses
+    for _, A_1 in next, Houses:GetChildren() do
+        if A_1:IsA("Model") and A_1.PrimaryPart and (Pos - A_1.PrimaryPart.Position).magnitude <= Distance then
+            return A_1.PrimaryPart
+        end
+    end
+    -- Stores
+    for _, A_1 in next, Stores:GetChildren() do
+        local Break = A_1:FindFirstChild("Breakable")
+        if Break and (Pos - Break.Position).magnitude <= Distance then
+            return Break
+        end
+    end
+    -- Gate
+    local Door = Workspace:WaitForChild("Gate").Door
+    if (Pos - Door.Position).magnitude <= Distance then
+        return Door
+    end
+    -- Prison
+    local Prison = Workspace:WaitForChild("JailGate").FrontDoor.Breakable
+    if (Pos - Prison.Position).magnitude <= Distance then
+        return Prison
+    end
+    return false
+end
+
 --// Touch Function \\--
 function Touch(Part, Touching)
     pcall(function()
@@ -116,7 +169,7 @@ local Sword_Aura = Window:AddFolder("Kill-Aura")
 Sword_Aura:AddToggle({
     text = "Sword Aura",
     flag = "Sword_Aura",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Sword_Aura do
             local Sword = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
             if Sword and Sword.Name:find("Sword") and Sword:FindFirstChild("Handle") then
@@ -133,12 +186,12 @@ Sword_Aura:AddToggle({
 Sword_Aura:AddToggle({
     text = "Bow Aura?",
     flag = "Bow",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Bow do
             local Bow = Player.Character and Player.Character:FindFirstChild("Bow")
             if Bow and Bow:FindFirstChild("Handle") and Bow:FindFirstChild("RemoteEvent") then
                 local Bow_Position = Bow.Handle.Position
-                local To_Attack = GetClosestEnemy(Bow_Position, 50)
+                local To_Attack = GetClosestEnemy(Bow_Position, Library.flags.Bow_Aura_Distance)
                 if To_Attack ~= false then
                     Bow.RemoteEvent:FireServer("fire", (To_Attack.Position - Bow_Position).unit, Bow_Position)
                 end
@@ -148,11 +201,19 @@ Sword_Aura:AddToggle({
     end
 })
 Sword_Aura:AddSlider({
-    text = "Range",
+    text = "Sword Range",
     flag = "Sword_Aura_Distance",
     min = 4,
-    max = 12,
+    max = 11,
     float = 0.5
+})
+Sword_Aura:AddSlider({
+    text = "Bow Range",
+    flag = "Bow_Aura_Distance",
+    min = 5,
+    max = 100,
+    float = 1,
+    value = 40
 })
 local Sword_Targeting = Sword_Aura:AddFolder("Targets")
 for _, A_1 in next, Teams do
@@ -179,14 +240,14 @@ function GetHealthy()
     return Closest
 end
 
---// Get Closest Rice \\--
-function GetRice(Sickle)
+--// Get Closest Harvestable \\--
+function GetHarvestable(Handle, Crop)
     local Closest = false
-    local Distance = 9
-    for _, A_1 in next, Rice:GetChildren() do
+    local Distance = Library.flags.Farming_Range
+    for _, A_1 in next, Harvest[Crop]:GetChildren() do
         local Middle = A_1:FindFirstChild("Middle", true)
         if Middle and A_1:FindFirstChild("Health") and A_1.Health.Value > 0 then
-            local Dist = (Sickle.Position - Middle.Position).magnitude
+            local Dist = (Handle.Position - Middle.Position).magnitude
             if Dist < Distance then
                 Distance = Dist
                 Closest = Middle
@@ -201,10 +262,10 @@ local Doctor = Window:AddFolder("Doctor")
 Doctor:AddToggle({
     text = "Heal Aura",
     flag = "Heal",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Heal do
-            local MedKit = Player.Character and Player.Character:FindFirstChild("Bandage")
-            if MedKit and MedKit:FindFirstChild("Handle") then
+            local MedKit = GetTool("Bandage")
+            if MedKit then
                 local To_Heal = GetHealthy()
                 if To_Heal ~= false then
                     MedKit:Activate()
@@ -235,11 +296,11 @@ local Guard = Window:AddFolder("Guard")
 Guard:AddToggle({
     text = "Arrest Aura",
     flag = "Arrest",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Arrest do
             local Distance = 13
-            local Arrest_Tool = Player.Character and Player.Character:FindFirstChild("Handcuffs")
-            if Arrest_Tool and Arrest_Tool:FindFirstChild("Handle") then
+            local Arrest_Tool = GetTool("Handcuffs")
+            if Arrest_Tool then
                 for _, A_1 in next, Players:GetPlayers() do
                     local Stats = A_1:FindFirstChild("stats")
                     local Char = A_1.Character
@@ -259,11 +320,11 @@ local Landlord = Window:AddFolder("Landlord")
 Landlord:AddToggle({
     text = "Rent Collection Aura",
     flag = "Rent",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Rent do
-            local Distance = 15
-            local Rent_Tool = Player.Character and Player.Character:FindFirstChild("Collect Rent")
-            if Rent_Tool and Rent_Tool:FindFirstChild("Handle") then
+            local Distance = Library.flags.Rent_Range
+            local Rent_Tool = GetTool("Rent")
+            if Rent_Tool then
                 for _, A_1 in next, Players:GetPlayers() do
                     local Stats = A_1:FindFirstChild("stats")
                     local Char = A_1.Character
@@ -277,16 +338,23 @@ Landlord:AddToggle({
         end
     end
 })
+Landlord:AddSlider({
+    text = "Collection Range",
+    flag = "Rent_Range",
+    min = 4,
+    max = 40,
+    value = 15
+})
 
 --// Barbarian \\--
 local Barbarian = Window:AddFolder("Barbarian")
 Barbarian:AddToggle({
     text = "Food-Steal Aura",
     flag = "Food_Aura",
-    callback = function(A_1)
+    callback = function()
         while Library.flags.Food_Aura do
-            local Steal_Food = Player.Character and Player.Character:FindFirstChild("steal food")
-            if Steal_Food and Steal_Food:FindFirstChild("Handle") and Steal_Food:FindFirstChild("Food") and Steal_Food.Food.Transparency ~= 0 and Player:DistanceFromCharacter(Food_Level.Position) <= 20 then
+            local Steal_Food = GetTool("steal food")
+            if Steal_Food and Steal_Food:FindFirstChild("Food") and Steal_Food.Food.Transparency ~= 0 and Player:DistanceFromCharacter(Food_Level.Position) <= 20 then
                 Steal_Food:Activate()
                 Touch(Steal_Food.Handle, Food_Level)
             end
@@ -300,23 +368,23 @@ local Farming = Window:AddFolder("Farming")
 Farming:AddToggle({
     text = "Rice Aura",
     flag = "Rice",
-    callback = function(A_1)
+    callback = function()
         -- Rice Farming
         while Library.flags.Rice do
             -- Variables
             local Kart = Karts:FindFirstChild(Player.Name)
             local Seat = Kart and Kart:FindFirstChild("VehicleSeat")
-            local Sickle = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            local Sickle = GetTool("Sickle")
             -- Vehicle
             if Seat and Kart:FindFirstChild("RightSickle") and Kart:FindFirstChild("LeftSickle") then
-                local Rice_To_Cut = GetRice(Kart:FindFirstChild("RightSickle"))
+                local Rice_To_Cut = GetHarvestable(Kart:FindFirstChild("RightSickle"), "Rice")
                 if Rice_To_Cut ~= false then
                     Touch(Kart.RightSickle, Rice_To_Cut)
                     Touch(Kart.LeftSickle, Rice_To_Cut)
                 end
             -- Sickle
-            elseif Sickle and Sickle.Name:find("Sickle") and Sickle:FindFirstChild("Handle") then
-                local Rice_To_Cut = GetRice(Sickle.Handle)
+            elseif Sickle then
+                local Rice_To_Cut = GetHarvestable(Sickle.Handle, "Rice")
                 if Rice_To_Cut ~= false then
                     Sickle:Activate()
                     Touch(Sickle.Handle, Rice_To_Cut)
@@ -326,6 +394,48 @@ Farming:AddToggle({
             task.wait()
         end
     end
+})
+Farming:AddToggle({
+    text = "Tree Aura",
+    flag = "Tree",
+    callback = function()
+        -- Tree Chopping
+        while Library.flags.Tree do
+            local Axe = GetTool("Axe")
+            if Axe then
+                local Tree = GetHarvestable(Axe.Handle, "Trees")
+                if Tree ~= false then
+                    Axe:Activate()
+                    Touch(Axe.Handle, Tree)
+                end
+            end
+            task.wait(0.1)
+        end
+    end
+})
+Farming:AddToggle({
+    text = "Repair/Hammer Aura",
+    flag = "Hammer",
+    callback = function()
+        -- Building / Repairing
+        while Library.flags.Hammer do
+            local Hammer = GetTool("Hammer")
+            if Hammer then
+                local Building = GetClosestStructure(Hammer.Handle)
+                if Building ~= false then
+                    Hammer:Activate()
+                    Touch(Hammer.Handle, Building)
+                end
+            end
+            task.wait()
+        end
+    end
+})
+Farming:AddSlider({
+    text = "Aura Range",
+    flag = "Farming_Range",
+    min = 4,
+    max = 12
 })
 
 --// Done! \\--

@@ -12,6 +12,12 @@ if not pcall(function() return syn.protect_gui end) then
     end
 end
 
+--// Wait for game to load \\--
+while game:IsLoaded() == false do
+    task.wait()
+end
+task.wait(4)
+
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -49,6 +55,7 @@ local Window = Library:CreateWindow("Generic GUI by Ezpi#0474")
 
 -- ESP
 ESP:Toggle(false)
+ESP.Names = false
 Window:AddToggle({
     text = "ESP",
     callback = function(A_1)
@@ -82,6 +89,9 @@ end)
 Window:AddButton({
     text = "Rejoin Server",
     callback = function()
+        if typeof(syn) == "table" and syn.queue_on_teleport then
+            syn.queue_on_teleport(game:HttpGetAsync("https://raw.githubusercontent.com/JustEzpi/ROBLOX-Scripts/main/Generic_GUI"))
+        end
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
     end
 })
@@ -188,8 +198,8 @@ Sword_Aura:AddToggle({
     flag = "Bow",
     callback = function()
         while Library.flags.Bow do
-            local Bow = Player.Character and Player.Character:FindFirstChild("Bow")
-            if Bow and Bow:FindFirstChild("Handle") and Bow:FindFirstChild("RemoteEvent") then
+            local Bow = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            if Bow and Bow:FindFirstChild("Handle") and Bow:FindFirstChild("RemoteEvent") and Bow.Handle:FindFirstChild("Flash") then
                 local Bow_Position = Bow.Handle.Position
                 local To_Attack = GetClosestEnemy(Bow_Position, Library.flags.Bow_Aura_Distance)
                 if To_Attack ~= false then
@@ -343,7 +353,7 @@ Landlord:AddSlider({
     flag = "Rent_Range",
     min = 4,
     max = 40,
-    value = 15
+    value = 5
 })
 
 --// Barbarian \\--

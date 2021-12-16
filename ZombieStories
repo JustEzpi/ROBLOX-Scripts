@@ -1,0 +1,74 @@
+--// Service \\--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+--// Variables \\--
+local Camera = Workspace.CurrentCamera
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local Zombies = Workspace:WaitForChild("Zombies")
+
+--// Get Closest Zombie \\--
+function GetClosestZombie()
+    local Closest = false
+    local Distance = math.huge
+    local MousePos = Vector2.new(Mouse.X, Mouse.Y)
+    for _, A_1 in next, Zombies.GetChildren(Zombies) do
+        local Humanoid = A_1.FindFirstChildOfClass(A_1, "Humanoid")
+        if Humanoid and Humanoid.Health > 0 and A_1.FindFirstChild(A_1, "Head") then
+            local vector, onScreen = Camera.WorldToScreenPoint(Camera, A_1.Head.Position)
+            if onScreen then
+                local NewDistance = (MousePos - Vector2.new(vector.X, vector.Y)).Magnitude
+                if NewDistance < Distance then
+                    Distance = NewDistance
+                    Closest = vector
+                end
+            end
+        end
+    end
+    return Closest
+end
+
+--// No Weapon Spread \\--
+for _, A_1 in next, getgc(true) do
+    if type(A_1) == "table" and rawget(A_1, "Spread") then
+        A_1.Spread = 0
+    end
+end
+
+--// ESP \\--
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+ESP:AddObjectListener(workspace.Zombies, {
+    Color =  Color3.new(1,1,0),
+    Type = "Model",
+    PrimaryPart = function(A_1)
+        return A_1:WaitForChild("HumanoidRootPart")
+    end,
+    IsEnabled = "NPCs",
+})
+ESP.NPCs = true
+ESP:Toggle(true)
+
+--// Funny Namecall \\--
+local OldNameCall = nil
+OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    -- Variables
+    local Args = {...}
+    local NamecallMethod = getnamecallmethod()
+
+    -- Silent Aim
+    if NamecallMethod == "FireServer" and Args[1] == "Hit" and typeof(Args[2]) == "Instance" then
+        local Model = Args[2].FindFirstAncestorOfClass(Args[2], "Model")
+        local Head = Model.FindFirstChild(Model, "Head")
+        if Head then
+            Args[2] = Head
+        end
+    elseif NamecallMethod == "ScreenPointToRay" then
+        local Zombie = GetClosestZombie()
+        if Zombie then
+            Args[1] = Zombie.X
+            Args[2] = Zombie.Y
+        end
+    end
+    return OldNameCall(Self, unpack(Args))
+end)

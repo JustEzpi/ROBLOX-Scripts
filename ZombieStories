@@ -15,8 +15,8 @@ function GetClosestZombie()
     local MousePos = Vector2.new(Mouse.X, Mouse.Y)
     for _, A_1 in next, Zombies.GetChildren(Zombies) do
         local Humanoid = A_1.FindFirstChildOfClass(A_1, "Humanoid")
-        if Humanoid and Humanoid.Health > 0 and A_1.FindFirstChild(A_1, "Head") then
-            local vector, onScreen = Camera.WorldToScreenPoint(Camera, A_1.Head.Position)
+        if Humanoid and Humanoid.Health > 0 and A_1.FindFirstChild(A_1, "HumanoidRootPart") then
+            local vector, onScreen = Camera.WorldToScreenPoint(Camera, A_1.HumanoidRootPart.Position)
             if onScreen then
                 local NewDistance = (MousePos - Vector2.new(vector.X, vector.Y)).Magnitude
                 if NewDistance < Distance then

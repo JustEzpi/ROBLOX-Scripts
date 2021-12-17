@@ -13,7 +13,7 @@ function GetClosestZombie()
     local Closest = false
     local Distance = math.huge
     local MousePos = Vector2.new(Mouse.X, Mouse.Y)
-    for _, A_1 in next, Zombies.GetChildren(Zombies) do
+    for _, A_1 in next, Zombies.GetDescendants(Zombies) do
         local Health = A_1.FindFirstChild(A_1, "HP")
         if Health and Health.Value > 0 and A_1.FindFirstChild(A_1, "HumanoidRootPart") then
             local vector, onScreen = Camera.WorldToScreenPoint(Camera, A_1.HumanoidRootPart.Position)
@@ -39,13 +39,14 @@ end
 --// ESP \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:AddObjectListener(workspace.Zombies, {
+    Recursive = true,
     Color =  Color3.new(1,1,0),
     Type = "Model",
     PrimaryPart = function(A_1)
         return A_1:WaitForChild("HumanoidRootPart")
     end,
     IsEnabled = function(A_1)
-        local Health = A_1.PrimaryPart.Parent:FindFirstChild("HP")
+        local Health = A_1.PrimaryPart.Parent and A_1.PrimaryPart.Parent:FindFirstChild("HP")
         if Health and Health.Value > 0 then
             return true
         end

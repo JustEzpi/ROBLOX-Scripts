@@ -1,6 +1,7 @@
 --// Service \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 --// Variables \\--
 local Camera = Workspace.CurrentCamera
@@ -29,18 +30,11 @@ function GetClosestZombie()
     return Closest
 end
 
---// No Weapon Spread \\--
-for _, A_1 in next, getgc(true) do
-    if type(A_1) == "table" and rawget(A_1, "Spread") then
-        A_1.Spread = 0
-    end
-end
-
 --// ESP \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:AddObjectListener(workspace.Zombies, {
     Recursive = true,
-    Color =  Color3.new(1,1,0),
+    Color =  Color3.new(1, 0.2, 0.2),
     Type = "Model",
     PrimaryPart = function(A_1)
         return A_1:WaitForChild("HumanoidRootPart")
@@ -53,7 +47,23 @@ ESP:AddObjectListener(workspace.Zombies, {
         return false
     end
 })
+ESP.TeamMates = false
 ESP:Toggle(true)
+
+--// No Weapon Spread \\--
+for _, A_1 in next, game:GetService("ReplicatedStorage"):WaitForChild("SWEP_Resources"):WaitForChild("Config"):GetChildren() do
+    local Weapon_Stats = require(A_1)
+    if Weapon_Stats.Spread then
+        Weapon_Stats.Spread = 0
+    end
+    if Weapon_Stats.ADSSpreadReduction then
+        Weapon_Stats.ADSSpreadReduction = 0
+    end
+end
+
+-- Make player re-equip gun
+VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, 0, game)
+VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, 0, game)
 
 --// Funny Namecall \\--
 local OldNameCall = nil

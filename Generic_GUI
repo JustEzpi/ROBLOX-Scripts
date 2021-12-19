@@ -414,6 +414,9 @@ Barbarian:AddToggle({
 --// Jester \\--
 if isnetworkowner ~= nil then
     local Jester = Window:AddFolder("Jester")
+    Jester:AddLabel({
+        text = "Stand next to peel"
+    })
     Jester:AddToggle({
         text = "Auto-Slip Enabled",
         flag = "Slip",

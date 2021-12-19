@@ -180,14 +180,14 @@ function GetClosestStructure(Handle)
     local Pos = Handle.Position
     -- Houses
     for _, A_1 in next, Houses:GetChildren() do
-        if A_1:IsA("Model") and A_1.PrimaryPart and (Pos - A_1.PrimaryPart.Position).magnitude <= Distance + 4 then
+        if A_1:IsA("Model") and A_1.PrimaryPart and (Pos - A_1.PrimaryPart.Position).magnitude <= Distance + 6 then
             return A_1.PrimaryPart
         end
     end
     -- Stores
     for _, A_1 in next, Stores:GetChildren() do
         local Break = A_1:FindFirstChild("Breakable")
-        if Break and (Pos - Break.Position).magnitude <= Distance + 1 then
+        if Break and (Pos - Break.Position).magnitude <= Distance + 2 then
             return Break
         end
     end
@@ -198,7 +198,7 @@ function GetClosestStructure(Handle)
     end
     -- Prison
     local Prison = Workspace:WaitForChild("JailGate").FrontDoor.Breakable
-    if (Pos - Prison.Position).magnitude <= Distance - 1 then
+    if (Pos - Prison.Position).magnitude <= Distance - 2 then
         return Prison
     end
     return false

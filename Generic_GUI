@@ -16,11 +16,11 @@ end
 while game:IsLoaded() == false do
     task.wait()
 end
-task.wait(4)
 
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local Teams = game:GetService("Teams")
 local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -28,23 +28,24 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 --// Variables \\--
 local Player = Players.LocalPlayer
 local Food_Level = Workspace:WaitForChild("FoodSupplies"):WaitForChild("TownSupply"):WaitForChild("FoodLevel")
-local Teams = {}
+local Teams_Table = {}
 
 --// Folders \\--
 local Barbarians = Workspace:WaitForChild("Barbarians")
 local Karts = Workspace:WaitForChild("Karts")
 local Houses = Workspace:WaitForChild("Houses")
 local Stores = Workspace:WaitForChild("Stores")
+local Peels = Workspace:WaitForChild("BananaPeels")
 local Harvest = {
     Rice = Workspace:WaitForChild("Rice"),
     Trees = Workspace:WaitForChild("Trees")
 }
 
 --// Get Teams \\--
-for _, Team in next, game:GetService("Teams"):GetChildren() do
-    table.insert(Teams, Team.Name)
+for _, Team in next, Teams:GetChildren() do
+    table.insert(Teams_Table, Team.Name)
 end
-table.sort(Teams)
+table.sort(Teams_Table)
 
 --// Libraries \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
@@ -54,12 +55,48 @@ local Window = Library:CreateWindow("Generic GUI by Ezpi#0474")
 --// General \\--
 
 -- ESP
-ESP:Toggle(false)
+ESP:Toggle(true)
+ESP.Players = false
 ESP.Names = false
 Window:AddToggle({
-    text = "ESP",
+    text = "Player ESP",
     callback = function(A_1)
-        ESP:Toggle(A_1)
+        ESP.Players = A_1
+    end
+})
+Window:AddToggle({
+    text = "Money Tree ESP",
+    flag = "Money_Tree"
+})
+Window:AddToggle({
+    text = "ESP Names",
+    callback = function(A_1)
+        ESP.Names = A_1
+    end
+})
+ESP:AddObjectListener(Harvest.Trees, {
+    Color =  Color3.fromRGB(255, 50, 190),
+    Type = "Model",
+    PrimaryPart = function(A_1)
+        for i = 1, 10 do
+            local Primary = A_1:FindFirstChild("Middle", true)
+            if Primary then
+                return Primary
+            end
+            wait(0.8)
+        end
+        return false
+    end,
+    CustomName = "Money Tree",
+    IsEnabled = function(A_1)
+        if Library.flags.Money_Tree == false then
+            return false
+        end
+        local Model = A_1.PrimaryPart.Parent.Parent
+        if Model:IsA("Model") and Model.Name:find("Money") and (not Model:FindFirstChild("Owner") or Model.Owner.Value == Player) then
+            return true
+        end
+        return false
     end
 })
 
@@ -125,7 +162,8 @@ function GetClosestEnemy(Handle, Mag)
     -- Enemy Player
     for _, A_1 in next, Players:GetPlayers() do
         local Char = A_1.Character
-        if Char and A_1 ~= Player and Library.flags[A_1.Team.Name .. "_SwordAura"] == true and Char.PrimaryPart and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 then
+        local Humanoid = Char and Char:FindFirstChild("Humanoid")
+        if Char and Humanoid and A_1 ~= Player and Library.flags[A_1.Team.Name .. "_SwordAura"] == true and Char.PrimaryPart and Humanoid.Health > 0 then
             local Dist = (Handle - Char.PrimaryPart.Position).magnitude
             if Dist < Distance then
                 Distance = Dist
@@ -138,29 +176,29 @@ end
 
 --// Get Closest Structure \\--
 function GetClosestStructure(Handle)
-    local Distance = Library.flags.Farming_Range + 2
+    local Distance = Library.flags.Farming_Range
     local Pos = Handle.Position
     -- Houses
     for _, A_1 in next, Houses:GetChildren() do
-        if A_1:IsA("Model") and A_1.PrimaryPart and (Pos - A_1.PrimaryPart.Position).magnitude <= Distance then
+        if A_1:IsA("Model") and A_1.PrimaryPart and (Pos - A_1.PrimaryPart.Position).magnitude <= Distance + 4 then
             return A_1.PrimaryPart
         end
     end
     -- Stores
     for _, A_1 in next, Stores:GetChildren() do
         local Break = A_1:FindFirstChild("Breakable")
-        if Break and (Pos - Break.Position).magnitude <= Distance then
+        if Break and (Pos - Break.Position).magnitude <= Distance + 1 then
             return Break
         end
     end
     -- Gate
     local Door = Workspace:WaitForChild("Gate").Door
-    if (Pos - Door.Position).magnitude <= Distance then
+    if (Pos - Door.Position).magnitude <= Distance - 1 then
         return Door
     end
     -- Prison
     local Prison = Workspace:WaitForChild("JailGate").FrontDoor.Breakable
-    if (Pos - Prison.Position).magnitude <= Distance then
+    if (Pos - Prison.Position).magnitude <= Distance - 1 then
         return Prison
     end
     return false
@@ -174,7 +212,7 @@ function Touch(Part, Touching)
     end)
 end
 
---// Sword Aura \\--
+--// Combat Aura \\--
 local Sword_Aura = Window:AddFolder("Kill-Aura")
 Sword_Aura:AddToggle({
     text = "Sword Aura",
@@ -226,7 +264,7 @@ Sword_Aura:AddSlider({
     value = 40
 })
 local Sword_Targeting = Sword_Aura:AddFolder("Targets")
-for _, A_1 in next, Teams do
+for _, A_1 in next, Teams_Table do
     Sword_Targeting:AddToggle({
         text = A_1,
         flag = A_1 .. "_SwordAura"
@@ -294,7 +332,7 @@ Doctor:AddSlider({
     flag = "Heal_Distance"
 })
 local Heal_Selection = Doctor:AddFolder("Teams to Heal")
-for _, A_1 in next, Teams do
+for _, A_1 in next, Teams_Table do
     Heal_Selection:AddToggle({
         text = A_1,
         flag = A_1 .. "_Heal"
@@ -372,6 +410,61 @@ Barbarian:AddToggle({
         end
     end
 })
+
+--// Jester \\--
+if isnetworkowner ~= nil then
+    local Jester = Window:AddFolder("Jester")
+    Jester:AddToggle({
+        text = "Auto-Slip Enabled",
+        flag = "Slip",
+        callback = function()
+            while Library.flags.Slip do
+                local Distance = Library.flags.Slip_Range
+                for _, A_1 in next, Peels:GetChildren() do
+                    -- Check if player owns the peel
+                    if isnetworkowner(A_1) then
+                        -- Trip Players
+                        for _, A_2 in next, Players:GetPlayers() do
+                            local Char = A_2.Character
+                            local Hum = Char and Char:FindFirstChild("Humanoid")
+                            if A_2 ~= Player and A_2.Team and Library.flags[A_2.Team.Name .. "_Slip"] == true and Char and Hum and Char.PrimaryPart and (A_1.Position - Char.PrimaryPart.Position).magnitude <= Distance and Hum and Hum.Health >= 0 and (Library.flags.Seated_Slip == true and Hum.Sit == true or Library.flags.Seated_Slip == false) and Hum:GetState() ~= Enum.HumanoidStateType.Physics then
+                                Touch(A_1, Char.PrimaryPart)
+                                task.wait(Library.flags.Slip_Delay)
+                            end
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end
+    })
+    Jester:AddToggle({
+        text = "Only Slip Seated",
+        flag = "Seated_Slip"
+    })
+    Jester:AddSlider({
+        text = "Slip Range",
+        min = 2,
+        max = 100,
+        value = 5,
+        flag = "Slip_Range"
+    })
+    Jester:AddSlider({
+        text = "Slip Delay",
+        min = 0,
+        max = 1,
+        value = 0.3,
+        float = 0.01,
+        flag = "Slip_Delay"
+    })
+    local Slip_Target = Jester:AddFolder("Slip Target")
+    for _, A_1 in next, Teams_Table do
+        Slip_Target:AddToggle({
+            text = A_1,
+            flag = A_1 .. "_Slip"
+        })
+    end
+end
 
 --// Farming \\--
 local Farming = Window:AddFolder("Farming")

@@ -1,0 +1,74 @@
+--// Service \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--// Variables \\--
+local Action = ReplicatedStorage:WaitForChild("Events"):WaitForChild("GamesActions")
+local LossCounter = 0
+local LossMult = 1
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("CoinFlip by Ezpi")
+Window:AddLabel({
+    text = "This is not guaranteed profit"
+})
+
+--// CoinFlip \\--
+Window:AddToggle({
+    text = "Enabled",
+    callback = function()
+        while Library.flags.Enabled == true do
+            local Side = Library.flags.Flip_Side == "Heads"
+            if Library.flags.Flip_Side == "Random" then
+                Side = math.random(1, 2) == 1
+            end
+            local Result = game:GetService("ReplicatedStorage").Events.GamesActions:InvokeServer("Coinflip", tonumber(Library.flags.Flip_Amount) * LossMult, Side)
+            if Result then
+                print(Result[2])
+                if Result[1]:find("lost") then
+                    LossMult *= 2
+                    LossCounter += 1
+                else
+                    LossMult = 1
+                    LossCounter = 0
+                end
+                LossCounter_Window.Text = "Loss Counter: " .. tostring(LossCounter)
+                Betting_Window.Text = "Betting Amount: " .. tostring(Library.flags.Flip_Amount * LossMult)
+            end
+            task.wait()
+        end
+    end
+})
+Window:AddBox({
+    text = "Flip Amount",
+    flag = "Flip_Amount",
+    value = "2",
+    callback = function(A_1)
+        Betting_Window.Text = "Betting Amount: " .. Library.flags.Flip_Amount * LossMult
+    end
+})
+Window:AddList({
+    text = "Bet",
+    values = {
+        "Heads",
+        "Tails",
+        "Random"
+    },
+    flag = "Flip_Side"
+})
+LossCounter_Window = Window:AddLabel({
+    text = "Loss Counter: 0"
+})
+Betting_Window = Window:AddLabel({
+    text = "Betting Amount: " .. Library.flags.Flip_Amount * LossMult
+})
+Window:AddButton({
+    text = "Reset Loss Counter",
+    callback = function()
+        LossCounter_Window.Text = "Loss Counter: 0"
+        Betting_Window.Text = "Betting Amount: " .. Library.flags.Flip_Amount
+        LossMult = 1
+        LossCounter = 0
+    end
+})
+Library:Init()

@@ -4,6 +4,7 @@ local Workspace = game:GetService("Workspace")
 
 --// Variable \\--
 local Player = Players.LocalPlayer
+local Ignore = {}
 
 --// ESP Library by Kiriot22 \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
@@ -13,19 +14,19 @@ ESP.Boxes = false
 
 --// Set Tile \\--
 function Detect(Root, C)
-    -- Variables
-    local Parameters = RaycastParams.new()
-    Parameters.FilterType = Enum.RaycastFilterType.Whitelist
-    Parameters.FilterDescendantsInstances = {Workspace:WaitForChild("Guess")}
+    -- Parameters
+    local Params = RaycastParams.new()
+    Params.FilterDescendantsInstances = Ignore
+    Params.FilterType = Enum.RaycastFilterType.Blacklist
     -- RayCast
-    local Hit = Workspace:Raycast(Root.Position, Vector3.new(0, -5, 0), Parameters)
+    local Hit = Workspace:Raycast(Root.Position, Vector3.new(0, -10, 0), Params)
     if Hit and Hit.Instance:FindFirstChildOfClass("TouchTransmitter") then
         ESP:Add(Hit.Instance, {
             Name = "Ezpi",
             PrimaryPart = Hit.Instance,
             Color = C,
             IsEnabled = function(A_1)
-                return Player:DistanceFromCharacter(A_1.PrimaryPart.Position) <= 100
+                return Player:DistanceFromCharacter(A_1.PrimaryPart.Position) <= 125
             end
         })
     end
@@ -33,10 +34,19 @@ end
 
 --// Humanoid Detect Stuff \\--
 function OnDeath(Char)
+    -- Variables
     local Humanoid = Char:WaitForChild("Humanoid")
-    local Root = Char:WaitForChild("HumanoidRootPart")
+    while not Char.PrimaryPart do
+        task.wait()
+    end
+    local Root = Char.PrimaryPart
+    -- Store
+    table.insert(Ignore, Char)
+    -- Detect Changes
     Humanoid.StateChanged:Connect(function(Old, New)
-        print(Old, New)
+        if Char == Player.Character then
+            print(Old, New)
+        end
         if Old == Enum.HumanoidStateType.Freefall and New == Enum.HumanoidStateType.Landed or New == Enum.HumanoidStateType.Jumping then
             Detect(Root, Color3.new(0, 1, 0))
         elseif New == Enum.HumanoidStateType.Dead then
@@ -53,6 +63,12 @@ for _, A_1 in next, Players:GetPlayers() do
         end)
     end
     A_1.CharacterAdded:Connect(OnDeath)
+    A_1.CharacterRemoving:Connect(function(Char)
+        local Index = table.find(Ignore, Char)
+        if Index then
+            table.remove(Ignore, Index)
+        end
+    end)
 end
 Players.PlayerAdded:Connect(function(Plr)
     if Plr.Character then
@@ -61,4 +77,10 @@ Players.PlayerAdded:Connect(function(Plr)
         end)
     end
     Plr.CharacterAdded:Connect(OnDeath)
+    Plr.CharacterRemoving:Connect(function(Char)
+        local Index = table.find(Ignore, Char)
+        if Index then
+            table.remove(Ignore, Index)
+        end
+    end)
 end)

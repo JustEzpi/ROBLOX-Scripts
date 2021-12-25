@@ -19,7 +19,7 @@ function Detect(Root, C)
     Params.FilterDescendantsInstances = Ignore
     Params.FilterType = Enum.RaycastFilterType.Blacklist
     -- RayCast
-    local Hit = Workspace:Raycast(Root.Position, Vector3.new(0, -10, 0), Params)
+    local Hit = Workspace:Raycast(Root.Position, Vector3.new(0, -6, 0), Params)
     if Hit and Hit.Instance:FindFirstChildOfClass("TouchTransmitter") then
         ESP:Add(Hit.Instance, {
             Name = "Ezpi",
@@ -84,3 +84,16 @@ Players.PlayerAdded:Connect(function(Plr)
         end
     end)
 end)
+
+--// Ignore Fake Parts \\--
+function FakePart(Part)
+    if Part:IsA("TouchTransmitter") and Part.Parent.Transparency == 1 then
+        table.insert(Ignore, Part.Parent)
+    end
+end
+
+--// Detect Parts \\--
+Workspace.DescendantAdded:Connect(FakePart)
+for _, A_1 in next, Workspace:GetDescendants() do
+    FakePart(A_1)
+end

@@ -21,6 +21,7 @@ function Detect(Root, C)
     -- RayCast
     local Hit = Workspace:Raycast(Root.Position, Vector3.new(0, -6, 0), Params)
     if Hit and Hit.Instance:FindFirstChildOfClass("TouchTransmitter") then
+        print(Hit.Instance)
         ESP:Add(Hit.Instance, {
             Name = "Ezpi",
             PrimaryPart = Hit.Instance,
@@ -87,7 +88,7 @@ end)
 
 --// Ignore Fake Parts \\--
 function FakePart(Part)
-    if Part:IsA("TouchTransmitter") and Part.Parent.Transparency == 1 then
+    if Part:IsA("TouchTransmitter") and Part.Parent.Transparency >= 0.9 then
         table.insert(Ignore, Part.Parent)
     end
 end

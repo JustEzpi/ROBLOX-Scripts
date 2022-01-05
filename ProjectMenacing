@@ -1,0 +1,53 @@
+--// Exploit Check \\--
+if firetouchinterest == nil then
+    warn("Not Supported :(")
+    return
+end
+
+--// Services \\--
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+--// Variable \\--
+local Player = Players.LocalPlayer
+
+--// Collect Drop \\--
+function Collect(A_1)
+    task.spawn(function()
+        while A_1.Parent == Workspace do
+            pcall(function()
+                firetouchinterest(Player.Character.PrimaryPart, A_1.Handle, 0)
+                firetouchinterest(Player.Character.PrimaryPart, A_1.Handle, 1)
+            end)
+            task.wait()
+        end
+        if A_1.Parent == Player.Character then
+            A_1.Parent = Player.Backpack
+        end
+    end)
+end
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Collector by Ezpi#0474")
+Window:AddToggle({
+    text = "Auto-Collect",
+    flag = "Collect",
+    callback = function(A_1)
+        if A_1 == true then
+            for _, A_1 in next, Workspace:GetChildren() do
+                if A_1:IsA("Tool") then
+                    Collect(A_1)
+                end
+            end
+        end
+    end
+})
+Library:Init()
+
+--// Get Drops \\--
+Workspace.ChildAdded:Connect(function(A_1)
+    if Library.flags.Collect and A_1:IsA("Tool") then
+        Collect(A_1)
+    end
+end)

@@ -1,3 +1,11 @@
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
+
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +19,19 @@ local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:Toggle(true)
 ESP.Players = false
 ESP.Boxes = false
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Memory by Ezpi#0474")
+Window:AddButton({
+    text = "Clear",
+    callback = function()
+        for _, A_1 in next, ESP.Objects do
+            A_1:Remove()
+        end
+    end
+})
+Library:Init()
 
 --// Set Tile \\--
 function Detect(Root, C)

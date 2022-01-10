@@ -1,0 +1,134 @@
+--// Services \\--
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+--// Variables \\--
+local Player = Players.LocalPlayer
+local Rocks = Workspace:WaitForChild("MiningRocks")
+local Robbable = Workspace:WaitForChild("Robbable")
+
+--// Libraries \\--
+local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
+ESP:Toggle(true)
+ESP.Players = false
+ESP.Rob = false
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("Helper by Ezpi#0474")
+
+--// Get Target \\--
+function GetTarget()
+    local Distance = Library.flags.Range
+    local Closest = false
+    for _, A_1 in next, Players:GetPlayers() do
+        local Char = A_1.Character
+        if Char and A_1 ~= Player and Char:FindFirstChild("Head") and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and not Char:FindFirstChild("ForceField") then
+            local New_Distance = Player:DistanceFromCharacter(Char.Head.Position)
+            if New_Distance < Distance then
+                Distance = New_Distance
+                Closest = Char.Head
+            end
+        end
+    end
+    return Closest
+end
+
+--// UI Library \\--
+Window:AddToggle({
+    text = "Player ESP",
+    callback = function(A_1)
+        ESP.Players = A_1
+    end
+})
+Window:AddToggle({
+    text = "Rob ESP",
+    flag = "Rob"
+})
+Window:AddToggle({
+    text = "Attack-Aura",
+    flag = "Attack",
+    callback = function()
+        while Library.flags.Attack == true and wait() do
+            local Target = GetTarget()
+            local Char = Player.Character
+            if Target and Char then
+                for _, Tool in next, Char:GetChildren() do
+                    if Tool:IsA("Tool") and Tool:FindFirstChild("Damage") and Tool.Damage.Value > 0 then
+                        Tool:Activate()
+                        pcall(function()
+                            firetouchinterest(Tool.Handle, Target, 0)
+                            firetouchinterest(Tool.Handle, Target, 1)
+                        end)
+                    end
+                end
+            end
+        end
+    end
+})
+Window:AddButton({
+    text = "Equip All Weapons",
+    callback = function()
+        for _, A_1 in next, Player.Backpack:GetChildren() do
+            if A_1:IsA("Tool") and A_1:FindFirstChild("Damage") and A_1.Damage.Value > 0 then
+                A_1.Parent = Player.Character
+            end
+        end
+    end
+})
+Window:AddSlider({
+    text = "Attack-Range",
+    flag = "Range",
+    min = 2,
+    max = 18,
+    float = 0.1
+})
+local Misc = Window:AddFolder("Misc")
+Misc:AddToggle({
+    text = "Auto-Mine",
+    flag = "Mine",
+    callback = function()
+        while Library.flags.Mine == true and wait() do
+            local Rock = Rocks:FindFirstChildOfClass("UnionOperation")
+            local Tool = Player.Character and Player.Character:FindFirstChild("Pickaxe")
+            if Rock and Tool then
+                Tool:Activate()
+                firetouchinterest(Tool.Handle, Rock, 0)
+                firetouchinterest(Tool.Handle, Rock, 1)
+                wait(0.35)
+            end            
+        end
+    end
+})
+Misc:AddToggle({
+    text = "Auto-Dumbell",
+    flag = "Dumbell",
+    callback = function()
+        while Library.flags.Dumbell do
+            local Tool = Player.Character and Player.Character:FindFirstChild("Dumbell")
+            if Tool then
+                Tool:Activate()
+                Tool:Deactivate()
+            end
+            wait()
+        end
+    end
+})
+Misc:AddBind({
+    text = "Teleport Forwards",
+    callback = function()
+        Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -5)
+    end
+})
+Library:Init()
+
+--// Rob ESP \\--
+for _, A_1 in next, Robbable:GetChildren() do
+    local Prompt = A_1:FindFirstChildWhichIsA("ProximityPrompt", true)
+    ESP:Add(A_1, {
+        Name = A_1.Name,
+        PrimaryPart = A_1.PrimaryPart or A_1:FindFirstChild("HumanoidRootPart"),
+        IsEnabled = function()
+            return Prompt.Enabled == true and Library.flags.Rob == true
+        end,
+        Color = Color3.fromRGB(66, 233, 255)
+    })
+end

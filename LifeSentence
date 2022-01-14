@@ -1,5 +1,5 @@
 --// Exploit Check \\--
-if firetouchinterest == nil then
+if #{firetouchinterest, fireproximityprompt} ~= 2 then
     while true do
     end
 end
@@ -15,31 +15,60 @@ end
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --// Variables \\--
 local Player = Players.LocalPlayer
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
+local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBackPart")
+local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
+local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
 
 --// Libraries \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:Toggle(true)
 ESP.Players = false
+ESP.AutoRemove = false
 ESP.Rob = false
 local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
 local Window = Library:CreateWindow("Helper by Ezpi#0474")
 
+--// ESP Color \\--
+ESP.Overrides.GetColor = function(A_1)
+    local A_2 = ESP:GetPlrFromChar(A_1)
+    if A_2 then
+        local A_3 = PlayerStats:FindFirstChild(A_2.Name)
+        local A_4 = A_2:FindFirstChild("Bounty", true)
+        if A_3 and A_3:FindFirstChild("Cop") and A_3.Cop.Value == true then
+            return Color3.new(0.2, 0.2, 1)
+        elseif A_4 and A_4.Value > 0 then
+            return Color3.new(1, 0.2, 0.2)
+        end
+    end
+    return Color3.new(0.5, 1, 0.5)
+end
+
 --// Get Target \\--
 function GetTarget()
+    -- Variables
     local Distance = Library.flags.Range
     local Closest = false
+    local Cop = Local_PlayerStats.Cop.Value
+    -- Go Through Players
     for _, A_1 in next, Players:GetPlayers() do
         local Char = A_1.Character
+        -- Player Check
         if Char and A_1 ~= Player and Char:FindFirstChild("Head") and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and not Char:FindFirstChild("ForceField") then
-            local New_Distance = Player:DistanceFromCharacter(Char.Head.Position)
-            if New_Distance < Distance then
-                Distance = New_Distance
-                Closest = Char.Head
+            -- Team Check
+            local Data = PlayerStats:FindFirstChild(A_1.Name)
+            if Data and Data:FindFirstChild("Cop") and (Cop == false or Data.Cop.Value == false) then
+                -- Distance Check
+                local New_Distance = Player:DistanceFromCharacter(Char.Head.Position)
+                if New_Distance < Distance then
+                    Distance = New_Distance
+                    Closest = Char.Head
+                end
             end
         end
     end
@@ -78,8 +107,42 @@ Window:AddToggle({
         end
     end
 })
-Window:AddButton({
+Window:AddToggle({
+    text = "Auto-Arrest",
+    flag = "Arrest",
+    callback = function()
+        while Library.flags.Arrest == true and wait() do
+            if Player.Character and Player.Character:FindFirstChild("Handcuffs") then
+                for _, A_1 in next, Players:GetPlayers() do
+                    local Char = A_1.Character
+                    if Char and A_1 ~= Player and A_1:FindFirstChild("leaderstats") and A_1.leaderstats:FindFirstChild("Bounty") and A_1.leaderstats.Bounty.Value > 0 then
+                        local Prox = Char:FindFirstChild("ArrestPrompt", true)
+                        if Prox and Player:DistanceFromCharacter(Prox.Parent.Position) < Prox.MaxActivationDistance then
+                            fireproximityprompt(Prox)
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+Window:AddToggle({
+    text = "Collect Dropped Cash",
+    flag = "Cash",
+    callback = function()
+        while Library.flags.Cash == true and wait() do
+            for _, A_1 in next, Workspace:GetChildren() do
+                local Prompt = A_1:FindFirstChildOfClass("ProximityPrompt")
+                if Prompt and A_1.Name == "DroppedCash" and Player:DistanceFromCharacter(A_1.Position) < Prompt.MaxActivationDistance then
+                    fireproximityprompt(Prompt)
+                end
+            end
+        end
+    end
+})
+Window:AddBind({
     text = "Equip All Weapons",
+    key = "R",
     callback = function()
         for _, A_1 in next, Player.Backpack:GetChildren() do
             if A_1:IsA("Tool") and A_1:FindFirstChild("Damage") and A_1.Damage.Value > 0 then
@@ -132,6 +195,33 @@ Misc:AddBind({
         Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -5)
     end
 })
+local Teleports = Window:AddFolder("Teleports")
+for _, A_1 in next, Workspace:WaitForChild("Buttons"):GetChildren() do
+    local Name = A_1:FindFirstChild("ToolName")
+    local Button = A_1:FindFirstChild("Button")
+    if Name and Button then
+        Teleports:AddButton({
+            text = Name.Value,
+            callback = function()
+                -- Check
+                local Primary = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") or false
+                if Primary == false then
+                    return
+                end
+                -- Bypass
+                local Pass = Player:WaitForChild("Backpack"):WaitForChild("Stats"):WaitForChild("TeleportPass")
+                while Pass.Value == false do
+                    firetouchinterest(Primary, TP_Part, 0)
+                    firetouchinterest(Primary, TP_Part, 1)
+                    task.wait(0.1)
+                end
+                -- Teleport
+                task.wait(0.25)
+                Primary.CFrame = Button.CFrame + Vector3.new(0, 3, 0)
+            end
+        })
+    end
+end
 Library:Init()
 
 --// Rob ESP \\--

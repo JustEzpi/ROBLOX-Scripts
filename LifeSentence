@@ -217,7 +217,7 @@ for _, A_1 in next, Workspace:WaitForChild("Buttons"):GetChildren() do
                 end
                 -- Teleport
                 task.wait(0.25)
-                Primary.CFrame = Button.CFrame + Vector3.new(0, 3, 0)
+                Primary.CFrame = CFrame.new(Button.Position) + Vector3.new(0, 3, 0)
             end
         })
     end

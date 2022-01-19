@@ -22,6 +22,7 @@ local Player = Players.LocalPlayer
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
 local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBackPart")
+local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
 
@@ -46,7 +47,7 @@ ESP.Overrides.GetColor = function(A_1)
             return Color3.new(1, 0.2, 0.2)
         end
     end
-    return Color3.new(0.5, 1, 0.5)
+    return Color3.new(1, 1, 1)
 end
 
 --// Get Target \\--
@@ -76,16 +77,6 @@ function GetTarget()
 end
 
 --// UI Library \\--
-Window:AddToggle({
-    text = "Player ESP",
-    callback = function(A_1)
-        ESP.Players = A_1
-    end
-})
-Window:AddToggle({
-    text = "Rob ESP",
-    flag = "Rob"
-})
 Window:AddToggle({
     text = "Attack-Aura",
     flag = "Attack",
@@ -157,6 +148,21 @@ Window:AddSlider({
     min = 2,
     max = 18,
     float = 0.1
+})
+local ESP_Folder = Window:AddFolder("ESP Settings")
+ESP_Folder:AddToggle({
+    text = "Players",
+    callback = function(A_1)
+        ESP.Players = A_1
+    end
+})
+ESP_Folder:AddToggle({
+    text = "Robbable",
+    flag = "Rob"
+})
+ESP_Folder:AddToggle({
+    text = "Items/Scrap",
+    flag = "Scrap"
 })
 local Misc = Window:AddFolder("Misc")
 Misc:AddToggle({
@@ -234,5 +240,30 @@ for _, A_1 in next, Robbable:GetChildren() do
             return Prompt.Enabled == true and Library.flags.Rob == true
         end,
         Color = Color3.fromRGB(66, 233, 255)
+    })
+end
+
+--// Item ESP \\--
+local Scrap = {"Gear", "Blade", "Spring"}
+for _, A_1 in next, LootSpawns:GetChildren() do
+    local Prompt = A_1:WaitForChild("Part"):WaitForChild("Attachment"):WaitForChild("ProximityPrompt")
+    ESP:Add(A_1, {
+        Name = "Item/Scrap",
+        PrimaryPart = A_1.PrimaryPart or A_1:FindFirstChild("Part"),
+        IsEnabled = function(A_2)
+            if Prompt.Enabled == true and Library.flags.Scrap == true then
+                -- Get Item Name
+                local New_Name = "Item/Scrap"
+                for _, A_3 in next, Scrap do
+                    if A_1[A_3].Transparency == 0 then
+                        New_Name = A_3
+                    end
+                end
+                ESP:GetBox(A_1).Name = New_Name
+                return true
+            end
+            return false
+        end,
+        Color = Color3.new(0.3, 1, 0.3)
     })
 end

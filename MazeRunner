@@ -1,4 +1,10 @@
---[[ Made by Ezpi#0474 ]]--
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = game:GetService("CoreGui")
+    end
+end
 
 --// Services \\--
 local Players = game:GetService("Players")
@@ -96,6 +102,12 @@ Window:AddButton({
                 Text = "Error"
             })
         end
+    end
+})
+Window:AddBind({
+    text = "Teleport Forwards",
+    callback = function()
+        Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -12)
     end
 })
 Library:Init()

@@ -73,7 +73,7 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
     local NamecallMethod = getnamecallmethod()
 
     -- Silent Aim
-    if NamecallMethod == "FireServer" and Args[1] == "Hit" and typeof(Args[2]) == "Instance" then
+    if NamecallMethod == "FireServer" and Args[1] == "Hit2" and typeof(Args[2]) == "Instance" then
         local Model = Args[2].FindFirstAncestorOfClass(Args[2], "Model")
         local Head = Model.FindFirstChild(Model, "Head")
         if Model.Name ~= "Gluttony Zombie" then

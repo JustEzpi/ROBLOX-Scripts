@@ -12,9 +12,6 @@ if not pcall(function() return syn.protect_gui end) then
     end
 end
 
---// Settings \\--
-local Mining_Disabled = true
-
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -25,6 +22,8 @@ local RunService = game:GetService("RunService")
 
 --// Variables \\--
 local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local Camera = Workspace.CurrentCamera
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
 local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBackPart")
@@ -85,7 +84,7 @@ end
 --// Get Target \\--
 function GetTarget()
     -- Variables
-    local Distance = Library.flags.Range
+    local Distance = Library.flags.Range + 0.1
     local Closest = false
     local Cop = Local_PlayerStats.Cop.Value
     -- Go Through Players
@@ -108,6 +107,36 @@ function GetTarget()
     return Closest
 end
 
+--// Get SilentAim Target \\--
+function SilentAimTarget()
+    local Closest = false
+    local Distance = math.huge
+    local MousePos = Vector2.new(Mouse.X, Mouse.Y)
+    for _, A_1 in next, Players.GetPlayers(Players) do
+        local Char = A_1.Character
+        local Hum = Char and Char.FindFirstChild(Char, "Humanoid")
+        if A_1 ~= Player and Hum and Hum.Health > 0 and Char.FindFirstChild(Char, "HumanoidRootPart") and not Char.FindFirstChild(Char, "ForceField") then
+            local vector, onScreen = Camera.WorldToScreenPoint(Camera, Char.HumanoidRootPart.Position)
+            if onScreen then
+                local NewDistance = (MousePos - Vector2.new(vector.X, vector.Y)).Magnitude
+                if NewDistance < Distance then
+                    Distance = NewDistance
+                    Closest = Char.HumanoidRootPart.Position
+                end
+            end
+        end
+    end
+    return Closest
+end
+
+--// Touch Func \\--
+function Touch(A_1, A_2)
+    pcall(function()
+        firetouchinterest(A_1, A_2, 0)
+        firetouchinterest(A_1, A_2, 1)
+    end)
+end
+
 --// UI Library \\--
 Window:AddToggle({
     text = "Attack-Aura",
@@ -115,20 +144,16 @@ Window:AddToggle({
     callback = function()
         while Library.flags.Attack == true and wait() do
             local Target = GetTarget()
-            local Char = Player.Character
-            if Target and Char then
-                for _, Tool in next, Char:GetChildren() do
-                    if Tool:IsA("Tool") and Tool:FindFirstChild("Damage") and Tool.Damage.Value > 0 then
-                        Tool:Activate()
-                        pcall(function()
-                            firetouchinterest(Tool.Handle, Target, 0)
-                            firetouchinterest(Tool.Handle, Target, 1)
-                        end)
-                    end
-                end
+            local Tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+            if Target and Tool and Tool:FindFirstChild("Damage") and Tool.Damage.Value > 0 then
+                Tool:Activate()
+                Touch(Tool.Handle, Target)
             end
         end
     end
+})
+Window:AddToggle({
+    text = "SilentAim"
 })
 Window:AddToggle({
     text = "Auto-Arrest",
@@ -163,23 +188,12 @@ Window:AddToggle({
         end
     end
 })
-Window:AddBind({
-    text = "Equip All Weapons",
-    key = "R",
-    callback = function()
-        for _, A_1 in next, Player.Backpack:GetChildren() do
-            if A_1:IsA("Tool") and A_1:FindFirstChild("Damage") and A_1.Damage.Value > 0 then
-                A_1.Parent = Player.Character
-            end
-        end
-    end
-})
 Window:AddSlider({
     text = "Attack-Range",
     flag = "Range",
     min = 2,
     max = 18,
-    float = 0.1
+    float = 0.25
 })
 local ESP_Folder = Window:AddFolder("ESP Settings")
 ESP_Folder:AddToggle({
@@ -197,39 +211,6 @@ ESP_Folder:AddToggle({
     flag = "Scrap"
 })
 local Misc = Window:AddFolder("Misc")
-if Mining_Disabled ~= true then
-    Misc:AddToggle({
-        text = "Auto-Mine",
-        flag = "Mine",
-        callback = function()
-            -- NoClip
-            local NoClip = RunService.RenderStepped:Connect(function()
-                local Pickaxe = Player.Character and Player.Character:FindFirstChild("Pickaxe")
-                if Pickaxe then
-                    pcall(function()
-                        Player.Character.HumanoidRootPart.Velocity = Vector3.new()
-                    end)
-                end
-            end)
-            -- AutoMine
-            while Library.flags.Mine == true and wait() do
-                local Rock = Rocks:FindFirstChildOfClass("UnionOperation")
-                local Tool = Player.Character and Player.Character:FindFirstChild("Pickaxe")
-                if Rock and Tool and Tool:FindFirstChild("InUse") and Tool.InUse.Value == false and Player.Character:FindFirstChild("HumanoidRootPart") then
-                    -- Teleport
-                    Player.Character.HumanoidRootPart.CFrame = Rock.CFrame - Vector3.new(0, 10, 0)
-                    -- Mine
-                    Tool:Activate()
-                    firetouchinterest(Tool.Handle, Rock, 0)
-                    firetouchinterest(Tool.Handle, Rock, 1)
-                    Tool:Deactivate()
-                end            
-            end
-            -- Disable
-            NoClip:Disconnect()
-        end
-    })
-end
 Misc:AddToggle({
     text = "Auto-Dumbell",
     flag = "Dumbell",
@@ -328,4 +309,18 @@ Players.PlayerAdded:Connect(function(A_1)
     if Library.flags.Mod == true then
         ModCheck(A_1)
     end
+end)
+
+--// SilentAim Namecall \\--
+local OldNameCall = nil
+OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    local Args = {...}
+    local NamecallMethod = getnamecallmethod()
+    if NamecallMethod == "FireServer" and Args[1] == "Fire" and Library.flags.SilentAim then
+        local Target = SilentAimTarget()
+        if Target ~= false then
+            Args[2] = Target
+        end
+    end
+    return OldNameCall(Self, unpack(Args))
 end)

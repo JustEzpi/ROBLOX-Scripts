@@ -1,5 +1,5 @@
 --// Exploit Check \\--
-if #{firetouchinterest, fireproximityprompt} ~= 2 then
+if #{firetouchinterest, fireproximityprompt, hookmetamethod} ~= 3 then
     while true do
     end
 end
@@ -12,10 +12,16 @@ if not pcall(function() return syn.protect_gui end) then
     end
 end
 
+--// Settings \\--
+local Mining_Disabled = true
+
 --// Services \\--
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MarketplaceService = game:GetService("MarketplaceService")
+local GroupService = game:GetService("GroupService") 
+local RunService = game:GetService("RunService")
 
 --// Variables \\--
 local Player = Players.LocalPlayer
@@ -25,6 +31,32 @@ local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBac
 local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
+
+--// Anti-Mod \\--
+local PlaceInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+local Group_ID = PlaceInfo.Creator.CreatorTargetId
+local Roles = GroupService:GetGroupInfoAsync(Group_ID).Roles
+local Ranks = {}
+Ranks.Guest = 0
+for Name, Rank in next, Roles do
+    Ranks[Name] = Rank
+end
+function ModCheck(A_1)
+    if Ranks[A_1:GetRoleInGroup(Group_ID)] > 2 then 
+        Player:Kick("Mod " .. A_1.Name .. " joined your game.")
+    end
+end
+
+--// TP Bypass \\--
+local Pass = Player:WaitForChild("Backpack"):WaitForChild("Stats"):WaitForChild("TeleportPass")
+local OldIndex = nil
+OldIndex = hookmetamethod(game, "__index", function(Self, Key)
+    if not checkcaller() and Self == Pass and Key == "Value" then
+        return true
+    end
+    return OldIndex(Self, Key)
+end)
+
 
 --// Libraries \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
@@ -165,22 +197,39 @@ ESP_Folder:AddToggle({
     flag = "Scrap"
 })
 local Misc = Window:AddFolder("Misc")
-Misc:AddToggle({
-    text = "Auto-Mine",
-    flag = "Mine",
-    callback = function()
-        while Library.flags.Mine == true and wait() do
-            local Rock = Rocks:FindFirstChildOfClass("UnionOperation")
-            local Tool = Player.Character and Player.Character:FindFirstChild("Pickaxe")
-            if Rock and Tool then
-                Tool:Activate()
-                firetouchinterest(Tool.Handle, Rock, 0)
-                firetouchinterest(Tool.Handle, Rock, 1)
-                wait(0.35)
-            end            
+if Mining_Disabled ~= true then
+    Misc:AddToggle({
+        text = "Auto-Mine",
+        flag = "Mine",
+        callback = function()
+            -- NoClip
+            local NoClip = RunService.RenderStepped:Connect(function()
+                local Pickaxe = Player.Character and Player.Character:FindFirstChild("Pickaxe")
+                if Pickaxe then
+                    pcall(function()
+                        Player.Character.HumanoidRootPart.Velocity = Vector3.new()
+                    end)
+                end
+            end)
+            -- AutoMine
+            while Library.flags.Mine == true and wait() do
+                local Rock = Rocks:FindFirstChildOfClass("UnionOperation")
+                local Tool = Player.Character and Player.Character:FindFirstChild("Pickaxe")
+                if Rock and Tool and Tool:FindFirstChild("InUse") and Tool.InUse.Value == false and Player.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Teleport
+                    Player.Character.HumanoidRootPart.CFrame = Rock.CFrame - Vector3.new(0, 10, 0)
+                    -- Mine
+                    Tool:Activate()
+                    firetouchinterest(Tool.Handle, Rock, 0)
+                    firetouchinterest(Tool.Handle, Rock, 1)
+                    Tool:Deactivate()
+                end            
+            end
+            -- Disable
+            NoClip:Disconnect()
         end
-    end
-})
+    })
+end
 Misc:AddToggle({
     text = "Auto-Dumbell",
     flag = "Dumbell",
@@ -192,6 +241,20 @@ Misc:AddToggle({
                 Tool:Deactivate()
             end
             wait()
+        end
+    end
+})
+Misc:AddToggle({
+    text = "Anti-Mod",
+    flag = "Mod",
+    callbcak = function(A_1)
+        -- Check
+        if A_1 == false then
+            return
+        end
+        -- Mod Check
+        for _, A_1 in next, Players:GetPlayers() do
+            ModCheck(A_1)
         end
     end
 })
@@ -214,15 +277,7 @@ for _, A_1 in next, Workspace:WaitForChild("Buttons"):GetChildren() do
                 if Primary == false then
                     return
                 end
-                -- Bypass
-                local Pass = Player:WaitForChild("Backpack"):WaitForChild("Stats"):WaitForChild("TeleportPass")
-                while Pass.Value == false do
-                    firetouchinterest(Primary, TP_Part, 0)
-                    firetouchinterest(Primary, TP_Part, 1)
-                    task.wait(0.1)
-                end
                 -- Teleport
-                task.wait(0.25)
                 Primary.CFrame = CFrame.new(Button.Position) + Vector3.new(0, 3, 0)
             end
         })
@@ -267,3 +322,10 @@ for _, A_1 in next, LootSpawns:GetChildren() do
         Color = Color3.new(0.3, 1, 0.3)
     })
 end
+
+--// Anti-Mod \\--
+Players.PlayerAdded:Connect(function(A_1)
+    if Library.flags.Mod == true then
+        ModCheck(A_1)
+    end
+end)

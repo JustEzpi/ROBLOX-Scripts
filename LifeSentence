@@ -1,5 +1,5 @@
 --// Exploit Check \\--
-if #{firetouchinterest, fireproximityprompt, hookmetamethod} ~= 3 then
+if #{firetouchinterest, fireproximityprompt, hookmetamethod, setupvalue, getgc} ~= 5 then
     while true do
     end
 end
@@ -43,6 +43,25 @@ end
 function ModCheck(A_1)
     if Ranks[A_1:GetRoleInGroup(Group_ID)] > 2 then 
         Player:Kick("Mod " .. A_1.Name .. " joined your game.")
+    end
+end
+
+--// Get Functions \\--
+local AddStamina;
+local RegWalkStuff;
+function UpdateFuncs()
+    local Scr = Player:FindFirstChild("CombatMain", true)
+    if Scr then
+        for _, A_1 in next, getgc() do
+            if type(A_1) == "function" and getfenv(A_1).script == Scr then
+                local Name = getinfo(A_1).name
+                if Name == "AddStamina" then
+                    AddStamina = A_1
+                elseif Name == "RegWalkStuff" then
+                    RegWalkStuff = A_1
+                end
+            end
+        end
     end
 end
 
@@ -213,17 +232,24 @@ ESP_Folder:AddToggle({
 local Misc = Window:AddFolder("Misc")
 Misc:AddToggle({
     text = "Auto-Dumbell",
-    flag = "Dumbell",
-    callback = function()
-        while Library.flags.Dumbell do
-            local Tool = Player.Character and Player.Character:FindFirstChild("Dumbell")
-            if Tool then
-                Tool:Activate()
-                Tool:Deactivate()
-            end
-            wait()
+    flag = "Dumbell"
+})
+Misc:AddToggle({
+    text = "Inf. Energy",
+    flag = "Energy",
+    callback = function(A_1)
+        -- Check
+        local Amount = math.huge
+        if A_1 == false then
+            Amount = 100
         end
+        -- Set
+        setupvalue(AddStamina, 1, Amount)
     end
+})
+Misc:AddToggle({
+    text = "Inf. Consumable",
+    flag = "Consume"
 })
 Misc:AddToggle({
     text = "Anti-Mod",
@@ -324,3 +350,47 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
     end
     return OldNameCall(Self, unpack(Args))
 end)
+
+--// Local character \\--
+function LocalChar(Char)
+    -- Inf Consumable & Auto-Dumbell
+    Char.ChildAdded:Connect(function(A_1)
+        if A_1.Name == "Dumbell" then
+            while Library.flags.Dumbell and A_1.Parent == Char do
+                A_1:Activate()
+                A_1:Deactivate()
+                wait()
+            end       
+        elseif Library.flags.Consume == true and A_1:IsA("Tool") then
+            -- Make consumable infinite
+            local Useless = A_1:FindFirstChild("ThrowAfterDone")
+            if Useless and Useless.Value == true then
+                wait()
+                Useless:Destroy()
+            end
+            -- Wait for use or unequip
+            while A_1.Parent == Char and Library.flags.Consume == true do
+                wait(0.1)
+            end
+            -- Fix sprinting
+            if Library.flags.Consume == true then
+                wait(0.2)
+                setupvalue(RegWalkStuff, 1, true)
+            end
+        end
+    end)
+    -- Get New Funcs
+    local Old_AddStamina = AddStamina
+    local Old_RegWalkStuff = RegWalkStuff
+    while (Old_AddStamina == AddStamina or Old_RegWalkStuff == RegWalkStuff) and task.wait(1) do
+        UpdateFuncs()
+    end
+    -- Infinite Energy
+    if Library.flags.Energy == true then
+        setupvalue(AddStamina, 1, math.huge)
+    end
+end
+task.spawn(function()
+    LocalChar(Player.Character)
+end)
+Player.CharacterAdded:Connect(LocalChar)

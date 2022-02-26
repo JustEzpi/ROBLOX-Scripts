@@ -1,0 +1,34 @@
+--// Exploit Fix \\--
+if not pcall(function() return syn.protect_gui end) then
+    syn = {}
+    syn.protect_gui = function(A_1)
+        A_1.Parent = CoreGui
+    end
+end
+
+--// Services \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+--// Variable \\--
+local Player = Players.LocalPlayer
+local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SellTower")
+
+--// UI Library \\--
+local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+local Window = Library:CreateWindow("EzMode by Ezpi#0474")
+Window:AddLabel({
+    text = "discord.gg/nxHQEk2kEt"
+})
+Window:AddButton({
+    text = "Inf. Cash",
+    callback = function()
+        Remote:FireServer({
+            Config = {
+                Owner = {Value = Player},
+                SellValue = {Value = 999999999}
+            }
+        })
+    end
+})
+Library:Init()

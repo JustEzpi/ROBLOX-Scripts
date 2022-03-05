@@ -66,10 +66,9 @@ function UpdateFuncs()
 end
 
 --// TP Bypass \\--
-local Pass = Player:WaitForChild("Backpack"):WaitForChild("Stats"):WaitForChild("TeleportPass")
 local OldIndex = nil
 OldIndex = hookmetamethod(game, "__index", function(Self, Key)
-    if not checkcaller() and Self == Pass and Key == "Value" then
+    if not checkcaller() and tostring(Self) == "TeleportPass" and Key == "Value" then
         return true
     end
     return OldIndex(Self, Key)
@@ -134,13 +133,13 @@ function SilentAimTarget()
     for _, A_1 in next, Players.GetPlayers(Players) do
         local Char = A_1.Character
         local Hum = Char and Char.FindFirstChild(Char, "Humanoid")
-        if A_1 ~= Player and Hum and Hum.Health > 0 and Char.FindFirstChild(Char, "HumanoidRootPart") and not Char.FindFirstChild(Char, "ForceField") then
-            local vector, onScreen = Camera.WorldToScreenPoint(Camera, Char.HumanoidRootPart.Position)
+        if A_1 ~= Player and Hum and Hum.Health > 0 and Char.FindFirstChild(Char, "Head") and not Char.FindFirstChild(Char, "ForceField") then
+            local vector, onScreen = Camera.WorldToScreenPoint(Camera, Char.Head.Position)
             if onScreen then
                 local NewDistance = (MousePos - Vector2.new(vector.X, vector.Y)).Magnitude
                 if NewDistance < Distance then
                     Distance = NewDistance
-                    Closest = Char.HumanoidRootPart.Position
+                    Closest = Char.Head
                 end
             end
         end
@@ -342,10 +341,10 @@ local OldNameCall = nil
 OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
     local Args = {...}
     local NamecallMethod = getnamecallmethod()
-    if NamecallMethod == "FireServer" and Args[1] == "Fire" and Library.flags.SilentAim then
+    if NamecallMethod == "FireServer" and Args[1] == "Fire" and Library.flags.SilentAim and typeof(Args[2]) == "table" then
         local Target = SilentAimTarget()
         if Target ~= false then
-            Args[2] = Target
+            Args[2][2] = Target
         end
     end
     return OldNameCall(Self, unpack(Args))

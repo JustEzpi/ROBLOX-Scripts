@@ -41,7 +41,8 @@ for Name, Rank in next, Roles do
     Ranks[Name] = Rank
 end
 function ModCheck(A_1)
-    if Ranks[A_1:GetRoleInGroup(Group_ID)] > 2 then 
+    local Rank = Ranks[A_1:GetRoleInGroup(Group_ID)]
+    if Rank and Rank > 2 then 
         Player:Kick("Mod " .. A_1.Name .. " joined your game.")
     end
 end
@@ -74,7 +75,6 @@ OldIndex = hookmetamethod(game, "__index", function(Self, Key)
     return OldIndex(Self, Key)
 end)
 
-
 --// Libraries \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:Toggle(true)
@@ -83,6 +83,9 @@ ESP.AutoRemove = false
 ESP.Rob = false
 local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
 local Window = Library:CreateWindow("Helper by Ezpi#0474")
+Window:AddLabel({
+    text = "discord.gg/nxHQEk2kEt"
+})
 
 --// ESP Color \\--
 ESP.Overrides.GetColor = function(A_1)
@@ -128,7 +131,7 @@ end
 --// Get SilentAim Target \\--
 function SilentAimTarget()
     local Closest = false
-    local Distance = math.huge
+    local Distance = 400
     local MousePos = Vector2.new(Mouse.X, Mouse.Y)
     for _, A_1 in next, Players.GetPlayers(Players) do
         local Char = A_1.Character
@@ -341,10 +344,14 @@ local OldNameCall = nil
 OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
     local Args = {...}
     local NamecallMethod = getnamecallmethod()
-    if NamecallMethod == "FireServer" and Args[1] == "Fire" and Library.flags.SilentAim and typeof(Args[2]) == "table" then
+    if NamecallMethod == "FireServer" and Args[1] == "Fire" and Library.flags.SilentAim and typeof(Args[2]) == "table" and typeof(Args[2][2]) == "Instance" then
         local Target = SilentAimTarget()
         if Target ~= false then
-            Args[2][2] = Target
+            for _, A_1 in next, Args[2] do
+                if typeof(A_1) == "Instance" then
+                    Args[2][_] = Target
+                end
+            end
         end
     end
     return OldNameCall(Self, unpack(Args))

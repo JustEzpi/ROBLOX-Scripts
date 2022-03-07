@@ -1,5 +1,5 @@
 --// Exploit Check \\--
-if #{hookmetamethod, getnamecallmethod} ~= 2 then
+if #{hookmetamethod, getnamecallmethod, checkcaller} ~= 3 then
     game:Shutdown()
     return
 end
@@ -56,6 +56,10 @@ Window:AddToggle({
         end
     end
 })
+Window:AddToggle({
+    text = "Faster Break",
+    flag = "Break"
+})
 Library:Init()
 
 --// Block Spoof \\--
@@ -67,8 +71,12 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
     local NamecallMethod = getnamecallmethod()
 
     -- Fake
-    if NamecallMethod == "FireServer" and Self.Name == "PlaceBlockE" and typeof(Info) == "table" and (Info[3].ClassName == "NumberValue" or Library.flags.Inf) then
+    if not checkcaller() and NamecallMethod == "FireServer" and Self.Name == "PlaceBlockE" and typeof(Info) == "table" and (Info[3].ClassName == "NumberValue" or Library.flags.Inf) then
         Info[3] = {Name=Info[1];Value=2;Parent=Inventory}
+    elseif not checkcaller() and NamecallMethod == "FireServer" and Self.Name == "BreakBlockE" and Library.flags.Break == true then
+        for _ = 1, 5 do
+            OldNameCall(Self, unpack(Args))
+        end
     end
     return OldNameCall(Self, unpack(Args))
 end)

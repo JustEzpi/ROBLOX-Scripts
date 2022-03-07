@@ -28,6 +28,10 @@ Window:AddToggle({
     text = "Soul Farm",
     flag = "Soul",
     callback = function(A_1)
+        -- Check
+        if Total.Value == "0" then
+            return
+        end
         -- Soul Animation Fix
         Gui:FindFirstChild("HallUiCtrl", true).Disabled = A_1
         -- AutoFarm

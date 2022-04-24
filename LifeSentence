@@ -166,7 +166,7 @@ Window:AddToggle({
         while Library.flags.Attack == true and wait() do
             local Target = GetTarget()
             local Tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
-            if Target and Tool and Tool:FindFirstChild("Damage") and Tool.Damage.Value > 0 then
+            if Target and Tool and Tool:FindFirstChild("Melee") then
                 Tool:Activate()
                 Touch(Tool.Handle, Target)
             end
@@ -248,10 +248,6 @@ Misc:AddToggle({
         -- Set
         setupvalue(AddStamina, 1, Amount)
     end
-})
-Misc:AddToggle({
-    text = "Inf. Consumable",
-    flag = "Consume"
 })
 Misc:AddToggle({
     text = "Anti-Mod",
@@ -367,22 +363,6 @@ function LocalChar(Char)
                 A_1:Deactivate()
                 wait()
             end       
-        elseif Library.flags.Consume == true and A_1:IsA("Tool") then
-            -- Make consumable infinite
-            local Useless = A_1:FindFirstChild("ThrowAfterDone")
-            if Useless and Useless.Value == true then
-                wait()
-                Useless:Destroy()
-            end
-            -- Wait for use or unequip
-            while A_1.Parent == Char and Library.flags.Consume == true do
-                wait(0.1)
-            end
-            -- Fix sprinting
-            if Library.flags.Consume == true then
-                wait(0.2)
-                setupvalue(RegWalkStuff, 1, true)
-            end
         end
     end)
     -- Get New Funcs

@@ -122,26 +122,6 @@ UserInputService.InputBegan:Connect(function(Input, Process)
     end
 end)
 
--- Spam Food
-Window:AddButton({
-    text = "Blox Cola Exploit",
-    callback = function()
-        -- Variables
-        local Char, Back = Player.Character, Player.Backpack
-        local Hunger = Player.stats.Hunger
-        local Food = Char and Back and Char:FindFirstChildOfClass("Tool")
-        local Timer = tick() + 2
-        -- Eat
-        while Food and (Food.Parent == Char or Food.Parent == Back) and Hunger.Value < 100 and tick() - Timer < 0 do
-            Food.Parent = Char
-            task.wait()
-            Food:Activate()
-            Food:Deactivate()
-            Food.Parent = Back
-        end
-    end
-})
-
 -- Rejoin
 Window:AddButton({
     text = "Rejoin Server",

@@ -14,7 +14,7 @@ end
 
 --// Wait for game to load \\--
 while game:IsLoaded() == false do
-    task.wait()
+    wait()
 end
 
 --// Services \\--
@@ -121,6 +121,26 @@ UserInputService.InputBegan:Connect(function(Input, Process)
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
     end
 end)
+
+-- Spam Food
+Window:AddButton({
+    text = "Blox Cola Exploit",
+    callback = function()
+        -- Variables
+        local Char, Back = Player.Character, Player.Backpack
+        local Hunger = Player.stats.Hunger
+        local Food = Char and Back and Char:FindFirstChildOfClass("Tool")
+        local Timer = tick() + 2
+        -- Eat
+        while Food and (Food.Parent == Char or Food.Parent == Back) and Hunger.Value < 100 and tick() - Timer < 0 do
+            Food.Parent = Char
+            task.wait()
+            Food:Activate()
+            Food:Deactivate()
+            Food.Parent = Back
+        end
+    end
+})
 
 -- Rejoin
 Window:AddButton({
@@ -274,7 +294,7 @@ end
 --// Get Healthy Player \\--
 function GetHealthy()
     local Closest = false
-    local Distance = Library.flags.Heal_Distance
+    local Distance = Library.flags.Inf_Heal_Distance == true and math.huge or Library.flags.Heal_Distance
     for _, A_1 in next, Players:GetPlayers() do
         local Char = A_1.Character
         if A_1 ~= Player and Library.flags[A_1.Team.Name .. "_Heal"] == true and Char and Char.PrimaryPart and Char:FindFirstChild("Humanoid") and Char.Humanoid.Health > 0 and Char.Humanoid.Health < Char.Humanoid.MaxHealth then
@@ -324,10 +344,14 @@ Doctor:AddToggle({
         end
     end,
 })
+Doctor:AddToggle({
+    text = "Inf. Range",
+    flag = "Inf_Heal_Distance"
+})
 Doctor:AddSlider({
     text = "Heal Distance",
     min = 4,
-    max = 40,
+    max = 150,
     float = 1,
     flag = "Heal_Distance"
 })
@@ -370,7 +394,7 @@ Landlord:AddToggle({
     flag = "Rent",
     callback = function()
         while Library.flags.Rent do
-            local Distance = Library.flags.Rent_Range
+            local Distance = Library.flags.Inf_Rent_Range == true and math.huge or Library.flags.Rent_Range
             local Rent_Tool = GetTool("Rent")
             if Rent_Tool then
                 for _, A_1 in next, Players:GetPlayers() do
@@ -392,6 +416,10 @@ Landlord:AddSlider({
     min = 4,
     max = 40,
     value = 5
+})
+Landlord:AddToggle({
+    text = "Inf. Range",
+    flag = "Inf_Rent_Range"
 })
 
 --// Barbarian \\--

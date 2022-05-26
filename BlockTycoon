@@ -1,3 +1,9 @@
+--// The script is patched, but the source code remains \\--
+do
+    game:GetService("Players").LocalPlayer:Kick("Patched & Discontinued.")
+    return
+end
+
 --// Exploit Check \\--
 if #{hookmetamethod, getnamecallmethod, checkcaller} ~= 3 then
     game:Shutdown()

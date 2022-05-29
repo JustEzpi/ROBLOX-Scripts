@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local GroupService = game:GetService("GroupService") 
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
 --// Variables \\--
 local Player = Players.LocalPlayer
@@ -30,6 +31,7 @@ local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBac
 local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
+local Buttons = Workspace:WaitForChild("Buttons")
 
 --// Anti-Mod \\--
 local PlaceInfo = MarketplaceService:GetProductInfo(game.PlaceId)
@@ -47,7 +49,24 @@ function ModCheck(A_1)
     end
 end
 
---// Get Functions \\--
+--// Random Teleport \\--
+local Random_Plat = Instance.new("Part")
+Random_Plat.Parent = Workspace
+Random_Plat.Size = Vector3.new(15, 1, 15)
+Random_Plat.Anchored = true
+Random_Plat.CastShadow = false
+Random_Plat.CanCollide = true
+Random_Plat.CanTouch = false
+Random_Plat.CFrame = CFrame.new(
+    math.random(-20000, 20000),
+    math.random(5000, 20000),
+    math.random(-20000, 20000)
+)
+
+--// Fullbright \\--
+local Old_Ambient = Lighting.Ambient
+
+--// Get Game-Functions \\--
 local AddStamina;
 local RegWalkStuff;
 function UpdateFuncs()
@@ -75,17 +94,28 @@ OldIndex = hookmetamethod(game, "__index", function(Self, Key)
     return OldIndex(Self, Key)
 end)
 
---// Libraries \\--
+--// ESP Library \\--
 local ESP = loadstring(game:HttpGet("https://kiriot22.com/releases/ESP.lua"))()
 ESP:Toggle(true)
 ESP.Players = false
 ESP.AutoRemove = false
 ESP.Rob = false
-local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
-local Window = Library:CreateWindow("Helper by Ezpi#0474")
-Window:AddLabel({
-    text = "discord.gg/nxHQEk2kEt"
-})
+ESP.Tracers = false
+
+--// UI Library \\--
+local File = writefile and readfile or false
+local Library = false
+Success, Library = pcall(function()
+    return readfile("uwuware UI.lua")
+end)
+if Success == false then
+    local Library = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware'))()
+    if File then
+        writefile("uwuware UI.lua", Library)
+    end
+end
+Library = loadstring(Library)()
+local Window = Library:CreateWindow("egg salad#3344")
 
 --// ESP Color \\--
 ESP.Overrides.GetColor = function(A_1)
@@ -150,12 +180,44 @@ function SilentAimTarget()
     return Closest
 end
 
+--// Get Dropped Cash \\--
+local Dropped_Cash = {}
+for _, A_1 in next, Workspace:GetChildren() do
+    local Prompt = A_1:FindFirstChildOfClass("ProximityPrompt")
+    if Prompt and A_1.Name == "DroppedCash" then
+        table.insert(Dropped_Cash, A_1)
+    end
+end
+Workspace.ChildAdded:Connect(function(A_1)
+    task.wait()
+    if A_1.Name == "DroppedCash" then
+        table.insert(Dropped_Cash, A_1)
+    end
+end)
+Workspace.ChildRemoved:Connect(function(A_1)
+    if A_1.Name == "DroppedCash" then
+        local Index = table.find(Dropped_Cash, A_1)
+        if Index then
+            table.remove(Dropped_Cash, Index)
+        end
+    end
+end)
+
 --// Touch Func \\--
 function Touch(A_1, A_2)
     pcall(function()
         firetouchinterest(A_1, A_2, 0)
         firetouchinterest(A_1, A_2, 1)
     end)
+end
+
+--// Get ESP Box \\--
+function GetBox(A_1)
+    local Box = ESP:GetBox(A_1) or false
+    if Box ~= false then
+        Box.Components.Distance.Transparency = 0
+    end
+    return Box
 end
 
 --// UI Library \\--
@@ -199,10 +261,10 @@ Window:AddToggle({
     text = "Collect Dropped Cash",
     flag = "Cash",
     callback = function()
-        while Library.flags.Cash == true and wait() do
-            for _, A_1 in next, Workspace:GetChildren() do
+        while Library.flags.Cash == true and task.wait() do
+            for _, A_1 in next, Dropped_Cash do
                 local Prompt = A_1:FindFirstChildOfClass("ProximityPrompt")
-                if Prompt and A_1.Name == "DroppedCash" and Player:DistanceFromCharacter(A_1.Position) < Prompt.MaxActivationDistance then
+                if Prompt and Player:DistanceFromCharacter(A_1.Position) <= Prompt.MaxActivationDistance then
                     fireproximityprompt(Prompt)
                 end
             end
@@ -231,7 +293,45 @@ ESP_Folder:AddToggle({
     text = "Items/Scrap",
     flag = "Scrap"
 })
+ESP_Folder:AddToggle({
+    text = "Tracers",
+    callback = function(A_1)
+        ESP.Tracers = A_1
+    end
+})
+ESP_Folder:AddToggle({
+    text = "Show Equipped",
+    flag = "Equipped",
+    callback = function(A_1)
+        for _, A_2 in next, Players:GetPlayers() do
+            local Box = Player.Character and GetBox(Player.Character)
+            if Box ~= nil and Box ~= false then
+                Box.Name = A_2.Name
+                if A_1 == true then
+                    local Tool = Player.Character:FindFirstChildOfClass("Tool")
+                    if Tool and (Tool:FindFirstChild("GunType") or Tool:FindFirstChild("Melee"))then
+                        Box.Name = A_2.Name .. "\n" .. Tool.Name
+                    end
+                end
+            end
+        end
+    end
+})
 local Misc = Window:AddFolder("Misc")
+Misc:AddToggle({
+    text = "Fullbright",
+    callback = function(A_1)
+        if A_1 == true then
+            Lighting.Ambient = Color3.new(1, 1, 1)
+            Lighting.ColorShift_Bottom = Color3.new(1, 1, 1)
+            Lighting.ColorShift_Top = Color3.new(1, 1, 1)
+        else
+            Lighting.Ambient = Old_Ambient
+            Lighting.ColorShift_Bottom = Color3.new()
+            Lighting.ColorShift_Top = Color3.new()
+        end
+    end
+})
 Misc:AddToggle({
     text = "Auto-Dumbell",
     flag = "Dumbell"
@@ -260,34 +360,72 @@ Misc:AddToggle({
         -- Mod Check
         for _, A_1 in next, Players:GetPlayers() do
             ModCheck(A_1)
+            task.wait(0.25) -- Checking too fast might be resulting in timeout?
         end
     end
 })
 Misc:AddBind({
     text = "Teleport Forwards",
     callback = function()
-        Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -5)
+        pcall(function()
+            Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -Library.flags.TP_Distance)
+        end)
     end
 })
+Misc:AddSlider({
+    text = "Teleport Distance",
+    flag = "TP_Distance",
+    value = 5,
+    min = 1,
+    max = 10
+})
 local Teleports = Window:AddFolder("Teleports")
-for _, A_1 in next, Workspace:WaitForChild("Buttons"):GetChildren() do
+local Destinations = {}
+for _, A_1 in next, Buttons:GetChildren() do
     local Name = A_1:FindFirstChild("ToolName")
     local Button = A_1:FindFirstChild("Button")
     if Name and Button then
-        Teleports:AddButton({
-            text = Name.Value,
-            callback = function()
-                -- Check
-                local Primary = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") or false
-                if Primary == false then
-                    return
-                end
-                -- Teleport
-                Primary.CFrame = CFrame.new(Button.Position) + Vector3.new(0, 3, 0)
-            end
-        })
+        table.insert(Destinations, Name.Value)
     end
 end
+table.sort(Destinations)
+Teleports:AddList({
+    text = "Destination",
+    values = Destinations,
+    callback = function(A_1)
+        -- Check
+        local Primary = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") or false
+        if Primary == false then
+            return
+        end
+        -- Teleport
+        local Button = Buttons:FindFirstChild(A_1 .. "Button") or false
+        if Button == false then
+            A_2 = A_1:gsub(" ", "")
+            A_2 = A_2:gsub("-", "")
+            Button = Buttons:FindFirstChild(A_2 .. "Button") or false
+            if Button == false then
+                for _, A_3 in next, Buttons:GetChildren() do
+                    if A_3.ToolName.Value == A_1 or A_3.ToolName.Value == A_2 then
+                        Button = A_3
+                        break
+                    end
+                end
+            end
+        end
+        if Button ~= false then
+            Primary.CFrame = CFrame.new(Button.Button.Position) * CFrame.new(0, 3, -1)
+        end
+    end
+})
+Teleports:AddButton({
+    text = "Platform TP",
+    callback = function()
+        pcall(function()
+            Player.Character.HumanoidRootPart.CFrame = Random_Plat.CFrame + Vector3.new(0, 4, 0)
+        end)
+    end
+})
 Library:Init()
 
 --// Rob ESP \\--
@@ -328,13 +466,6 @@ for _, A_1 in next, LootSpawns:GetChildren() do
     })
 end
 
---// Anti-Mod \\--
-Players.PlayerAdded:Connect(function(A_1)
-    if Library.flags.Mod == true then
-        ModCheck(A_1)
-    end
-end)
-
 --// SilentAim Namecall \\--
 local OldNameCall = nil
 OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
@@ -358,10 +489,10 @@ function LocalChar(Char)
     -- Inf Consumable & Auto-Dumbell
     Char.ChildAdded:Connect(function(A_1)
         if A_1.Name == "Dumbell" then
-            while Library.flags.Dumbell and A_1.Parent == Char do
+            while Library.flags.Dumbell and A_1.Parent == Char and Char == Player.Character do
                 A_1:Activate()
                 A_1:Deactivate()
-                wait()
+                task.wait(0.1)
             end       
         end
     end)
@@ -380,3 +511,46 @@ task.spawn(function()
     LocalChar(Player.Character)
 end)
 Player.CharacterAdded:Connect(LocalChar)
+
+--// Equipped Weapon ESP & Anti-Mod \\--
+function CheckWeapon(Char)
+    task.wait(0.05)
+    local Box = GetBox(Char)
+    if Box then
+        Box.Name = Char.Name
+    end
+    Char.ChildAdded:Connect(function(A_1)
+        task.wait()
+        if Library.flags.Equipped == true and A_1:IsA("Tool") and (A_1:FindFirstChild("GunType") or A_1:FindFirstChild("Melee")) then
+            if not Box then
+                Box = GetBox(Char)
+            end
+            if Box then
+                Box.Name = Char.Name .. "\n" .. A_1.Name
+            end
+        end
+    end)
+    Char.ChildRemoved:Connect(function(A_1)
+        if A_1:IsA("Tool") then
+            if not Box then
+                Box = GetBox(Char)
+            end
+            if Box then
+                Box.Name = Char.Name
+            end
+        end
+    end)
+end
+for _, A_1 in next, Players:GetPlayers() do
+    local Char = A_1.Character
+    if Char and Char.Parent ~= nil then
+        CheckWeapon(Char)
+    end
+    A_1.CharacterAdded:Connect(CheckWeapon)
+end
+Players.PlayerAdded:Connect(function(A_1)
+    CheckWeapon(A_1)
+    if Library.flags.Mod == true then
+        ModCheck(A_1)
+    end
+end)

@@ -115,7 +115,7 @@ if Success == false then
     end
 end
 Library = loadstring(Library)()
-local Window = Library:CreateWindow("egg salad#3344")
+local Window = Library:CreateWindow("Ezpi#0474")
 
 --// ESP Color \\--
 ESP.Overrides.GetColor = function(A_1)

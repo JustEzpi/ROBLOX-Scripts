@@ -25,9 +25,10 @@ local Lighting = game:GetService("Lighting")
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 local Camera = Workspace.CurrentCamera
+local Local = Player:WaitForChild("Backpack"):WaitForChild("Local")
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
-local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBackPart")
+local TP_Part = Workspace:WaitForChild("SecurityStuff"):WaitForChild("TeleBackPart")
 local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
@@ -70,7 +71,7 @@ local Old_Ambient = Lighting.Ambient
 local AddStamina;
 local RegWalkStuff;
 function UpdateFuncs()
-    local Scr = Player:FindFirstChild("CombatMain", true)
+    local Scr = Local:FindFirstChild("LocalMain", true)
     if Scr then
         for _, A_1 in next, getgc() do
             if type(A_1) == "function" and getfenv(A_1).script == Scr then

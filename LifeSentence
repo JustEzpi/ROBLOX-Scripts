@@ -27,11 +27,11 @@ local Mouse = Player:GetMouse()
 local Camera = Workspace.CurrentCamera
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
-local TP_Part = Workspace:WaitForChild("SecurityStuffIDK"):WaitForChild("TeleBackPart")
 local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
 local Buttons = Workspace:WaitForChild("Buttons")
+local Swing = ReplicatedStorage:WaitForChild("Events"):WaitForChild("WeaponEvent")
 
 --// Anti-Mod \\--
 local PlaceInfo = MarketplaceService:GetProductInfo(game.PlaceId)
@@ -70,7 +70,7 @@ local Old_Ambient = Lighting.Ambient
 local AddStamina;
 local RegWalkStuff;
 function UpdateFuncs()
-    local Scr = Player:FindFirstChild("CombatMain", true)
+    local Scr = Player:FindFirstChild("LocalMain", true)
     if Scr then
         for _, A_1 in next, getgc() do
             if type(A_1) == "function" and getfenv(A_1).script == Scr then
@@ -109,13 +109,13 @@ Success, Library = pcall(function()
     return readfile("uwuware UI.lua")
 end)
 if Success == false then
-    local Library = game:HttpGetAsync('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware')
+    Library = game:HttpGet('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware')
     if File then
         writefile("uwuware UI.lua", Library)
     end
 end
 Library = loadstring(Library)()
-local Window = Library:CreateWindow("Ezpi#0474")
+local Window = Library:CreateWindow("Helper by Ezpi#0474")
 
 --// ESP Color \\--
 ESP.Overrides.GetColor = function(A_1)
@@ -225,11 +225,12 @@ Window:AddToggle({
     text = "Attack-Aura",
     flag = "Attack",
     callback = function()
-        while Library.flags.Attack == true and wait() do
+        while Library.flags.Attack == true and task.wait(0.1) do
             local Target = GetTarget()
             local Tool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
             if Target and Tool and Tool:FindFirstChild("Melee") then
-                Tool:Activate()
+                Swing:FireServer("Swing")
+                task.wait()
                 Touch(Tool.Handle, Target)
             end
         end
@@ -352,7 +353,7 @@ Misc:AddToggle({
 Misc:AddToggle({
     text = "Anti-Mod",
     flag = "Mod",
-    callbcak = function(A_1)
+    callback = function(A_1)
         -- Check
         if A_1 == false then
             return

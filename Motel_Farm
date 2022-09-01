@@ -1,0 +1,59 @@
+-- Services
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+-- Variables
+local Player = Players.LocalPlayer
+local Energy = Player:WaitForChild("Energy")
+local Prompt = Workspace:WaitForChild("Objects"):WaitForChild("Actions"):WaitForChild("Windows"):WaitForChild("Window"):WaitForChild("ProximityPrompt")
+local Seat = Workspace:WaitForChild("Objects"):WaitForChild("Rest"):WaitForChild("Sofa"):WaitForChild("Seats"):WaitForChild("Seat")
+
+-- Instant Cleaning
+function Instant(Char)
+    Char.ChildAdded:Connect(function(A)
+        task.wait(0.1)
+        if A.Name == "WaterSpray" or A.Name == "Towel" then
+            A:Destroy()
+        end
+    end)
+end
+Instant(Player.Character)
+Player.CharacterAdded:Connect(Instant)
+
+--// UI Library \\--
+local File = writefile and readfile or false
+local Library = false
+Success, Library = pcall(function()
+    return readfile("uwuware UI.lua")
+end)
+if Success == false then
+    Library = game:HttpGet('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware')
+    if File then
+        writefile("uwuware UI.lua", Library)
+    end
+end
+Library = loadstring(Library)()
+local Window = Library:CreateWindow("Cleaner by Ezpi#0474")
+Window:AddToggle({
+    text = "Enabled",
+    callback = function()
+        while Library.flags.Enabled == true and task.wait() do
+            local Root = Player.Character and Player.Character:FindFirstChild("Humanoid") and Player.Character:FindFirstChild("HumanoidRootPart")
+            if Root then
+                if Energy.Value >= 5 then
+                    Root.CFrame = Prompt.Parent.CFrame
+                    fireproximityprompt(Prompt)
+                else
+                    Seat:Sit(Player.Character.Humanoid)
+                    while Energy.Value < 250 and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") == Root and Library.flags.Enabled == true do
+                        task.wait(0.1)
+                    end
+                    pcall(function()
+                        Player.Character.Humanoid.Sit = false
+                    end)
+                end
+            end
+        end
+    end
+})
+Library:Init()

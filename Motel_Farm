@@ -1,12 +1,19 @@
 -- Services
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 -- Variables
 local Player = Players.LocalPlayer
 local Energy = Player:WaitForChild("Energy")
 local Prompt = Workspace:WaitForChild("Objects"):WaitForChild("Actions"):WaitForChild("Windows"):WaitForChild("Window"):WaitForChild("ProximityPrompt")
 local Seat = Workspace:WaitForChild("Objects"):WaitForChild("Rest"):WaitForChild("Sofa"):WaitForChild("Seats"):WaitForChild("Seat")
+local MaxEnergy = 100
+
+-- Energy Gamepass Check
+if MarketplaceService:UserOwnsGamePassAsync(Player.UserId, 52887752) then
+    MaxEnergy = 250
+end
 
 -- Instant Cleaning
 function Instant(Char)
@@ -45,7 +52,7 @@ Window:AddToggle({
                     fireproximityprompt(Prompt)
                 else
                     Seat:Sit(Player.Character.Humanoid)
-                    while Energy.Value < 250 and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") == Root and Library.flags.Enabled == true do
+                    while Energy.Value < MaxEnergy and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") == Root and Library.flags.Enabled == true do
                         task.wait(0.1)
                     end
                     pcall(function()

@@ -27,11 +27,43 @@ local Mouse = Player:GetMouse()
 local Camera = Workspace.CurrentCamera
 local Rocks = Workspace:WaitForChild("MiningRocks")
 local Robbable = Workspace:WaitForChild("Robbable")
-local LootSpawns = Workspace:WaitForChild("LootSpawns")
 local PlayerStats = ReplicatedStorage:WaitForChild("PlayerStats")
 local Local_PlayerStats = PlayerStats:WaitForChild(Player.Name)
 local Buttons = Workspace:WaitForChild("Buttons")
 local Swing = ReplicatedStorage:WaitForChild("Events"):WaitForChild("WeaponEvent")
+
+--// TP Cooldown \\--
+local CD = false
+function TeleportCooldown()
+    if CD == true then
+        return false
+    else
+        CD = true
+        task.delay(1, function()
+            CD = false
+        end)
+        return true
+    end
+end
+
+--// Get Scrap \\--
+local LootSpawns = nil
+for _, A_1 in next, Workspace:GetChildren() do
+    if A_1:IsA("Folder") then
+        for _, A_2 in next, A_1:GetChildren() do
+            if A_2:IsA("Model") and A_2:FindFirstChildWhichIsA("Script") and A_2.PrimaryPart and A_2.PrimaryPart:FindFirstChildWhichIsA("ProximityPrompt", true) then
+                LootSpawns = A_1
+                break
+            end
+        end
+        if LootSpawns ~= nil then
+            break
+        end
+    end
+end
+if LootSpawns == nil then
+    return
+end
 
 --// Anti-Mod \\--
 local PlaceInfo = MarketplaceService:GetProductInfo(game.PlaceId)
@@ -367,7 +399,13 @@ Misc:AddToggle({
 })
 Misc:AddBind({
     text = "Teleport Forwards",
+    key = "Q",
     callback = function()
+        -- Debounce Check
+        if TeleportCooldown() == false then    
+            return
+        end
+        -- Teleport
         pcall(function()
             Player.Character.HumanoidRootPart.CFrame *= CFrame.new(0, 0, -Library.flags.TP_Distance)
         end)
@@ -396,7 +434,7 @@ Teleports:AddList({
     callback = function(A_1)
         -- Check
         local Primary = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") or false
-        if Primary == false then
+        if Primary == false or TeleportCooldown() == false then
             return
         end
         -- Teleport
@@ -422,6 +460,11 @@ Teleports:AddList({
 Teleports:AddButton({
     text = "Platform TP",
     callback = function()
+        -- Cooldown
+        if TeleportCooldown() == false then
+            return
+        end
+        -- Teleport
         pcall(function()
             Player.Character.HumanoidRootPart.CFrame = Random_Plat.CFrame + Vector3.new(0, 4, 0)
         end)

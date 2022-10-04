@@ -1,0 +1,37 @@
+--// UI Library \\--
+local File = writefile and readfile or false
+local Library = false
+Success, Library = pcall(function()
+    return readfile("uwuware UI.lua")
+end)
+if Success == false then
+    Library = game:HttpGet('https://raw.githubusercontent.com/Just-Egg-Salad/roblox-scripts/main/uwuware')
+    if File then
+        writefile("uwuware UI.lua", Library)
+    end
+end
+Library = loadstring(Library)()
+local Window = Library:CreateWindow("Tricker by Ezpi")
+Window:AddToggle({
+    text = "Money Bonus",
+})
+Window:AddToggle({
+    text = "Gem Bonus"
+})
+Library:Init()
+
+--// RemoteFunc Hook \\--
+local OldNameCall = nil
+OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    local Args = {...}
+    local NamecallMethod = getnamecallmethod()
+    if NamecallMethod == "InvokeServer" and Self.Name == "Finish" and typeof(Args[2]) == "table" then
+        if Library.flags["Money Bonus"] then
+            Args[2].rewardMul = 1000
+        end
+        if Library.flags["Gem Bonus"] then
+            Args[2].inBonus = true
+        end
+    end
+    return OldNameCall(Self, unpack(Args))
+end)
